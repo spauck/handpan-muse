@@ -1,66 +1,36 @@
-import { useState, useRef, useEffect } from "react";
+import { noteDisplayValue } from "@/lib/settings";
+import { IconNote } from "./IconNote";
 
 interface BeatCellProps {
-  value: number | null;
+  value: string | null;
   hand: "right" | "left";
-  onChange: (val: number | null) => void;
+  isSelected: boolean;
+  onSelect: () => void;
 }
 
-export function BeatCell({ value, hand, onChange }: BeatCellProps) {
-  const [editing, setEditing] = useState(false);
-  const [input, setInput] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (editing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [editing]);
-
-  const commit = () => {
-    setEditing(false);
-    const trimmed = input.trim();
-    if (trimmed === "" || trimmed === ".") {
-      onChange(null);
-    } else {
-      const n = parseInt(trimmed);
-      if (!isNaN(n)) onChange(n);
-    }
-  };
-
-  if (editing) {
-    return (
-      <input
-        ref={inputRef}
-        className="w-7 h-7 sm:w-8 sm:h-8 text-center text-sm font-mono bg-secondary rounded border border-ring outline-none text-foreground"
-        value={input}
-        maxLength={2}
-        onChange={(e) => setInput(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") commit();
-          if (e.key === "Escape") setEditing(false);
-        }}
-      />
-    );
-  }
-
+export function BeatCell({ value, hand, isSelected, onSelect }: BeatCellProps) {
   const colorClass = hand === "right" ? "text-hand-right" : "text-hand-left";
   const isEmpty = value === null;
 
+  const renderValue = () => {
+    if (isEmpty) return "·";
+    const parsed = noteDisplayValue(value);
+    if (parsed.type === "icon") {
+      return <IconNote name={parsed.value} size={14} />;
+    }
+    return parsed.value;
+  };
+
   return (
     <button
-      className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-sm font-mono rounded transition-colors
+      className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-sm font-mono rounded transition-all
         ${isEmpty ? "text-beat-empty hover:text-muted-foreground" : colorClass + " font-semibold"}
-        hover:bg-secondary cursor-pointer select-none`}
-      onClick={() => {
-        setInput(value !== null ? String(value) : "");
-        setEditing(true);
-      }}
-      title={`${hand === "right" ? "R" : "L"}: click to edit`}
+        ${isSelected ? "ring-2 ring-ring bg-accent scale-110" : "hover:bg-secondary"}
+        cursor-pointer select-none`}
+      onClick={onSelect}
+      title={`${hand === "right" ? "R" : "L"}: tap to select`}
     >
-      {isEmpty ? "·" : value}
+      {renderValue()}
     </button>
   );
 }

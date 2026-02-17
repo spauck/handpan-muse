@@ -1,5 +1,5 @@
 // Each beat: [rightHandNote, leftHandNote] where null = no note
-export type Beat = [number | null, number | null];
+export type Beat = [string | null, string | null];
 export type Row = Beat[];
 
 export interface ComposerState {
@@ -19,8 +19,6 @@ function initRow(beatsPerBar: number, barsPerRow: number): Row {
 }
 
 export function encodeState(state: ComposerState): string {
-  // Compact: b=beatsPerBar,r=barsPerRow,d=row1|row2...
-  // Each row: beat1,beat2... each beat: R.L (dot for null)
   const rows = state.rows.map(row =>
     row.map(([r, l]) => `${r ?? '.'}.${l ?? '.'}`).join(',')
   ).join('|');
@@ -42,8 +40,8 @@ export function decodeState(search: string): ComposerState {
     return rowStr.split(',').map(beatStr => {
       const [right, left] = beatStr.split('.');
       return [
-        right === '.' || right === '' ? null : parseInt(right),
-        left === '.' || left === '' ? null : parseInt(left),
+        right === '.' || right === '' ? null : right,
+        left === '.' || left === '' ? null : left,
       ] as Beat;
     });
   });
