@@ -1,15 +1,33 @@
 import { BeatCell } from "./BeatCell";
 import type { Row } from "@/lib/composer-state";
 
+interface SelectedCell {
+  rowIdx: number;
+  beatIdx: number;
+  hand: "right" | "left";
+}
+
 interface ComposerGridProps {
   rows: Row[];
   beatsPerBar: number;
   barsPerRow: number;
-  onBeatChange: (rowIdx: number, beatIdx: number, hand: "right" | "left", val: number | null) => void;
+  selectedCell: SelectedCell | null;
+  onSelectCell: (cell: SelectedCell | null) => void;
   onDeleteRow: (rowIdx: number) => void;
 }
 
-export function ComposerGrid({ rows, beatsPerBar, barsPerRow, onBeatChange, onDeleteRow }: ComposerGridProps) {
+export function ComposerGrid({ rows, beatsPerBar, barsPerRow, selectedCell, onSelectCell, onDeleteRow }: ComposerGridProps) {
+  const isSelected = (rowIdx: number, beatIdx: number, hand: "right" | "left") =>
+    selectedCell?.rowIdx === rowIdx && selectedCell?.beatIdx === beatIdx && selectedCell?.hand === hand;
+
+  const handleSelect = (rowIdx: number, beatIdx: number, hand: "right" | "left") => {
+    if (isSelected(rowIdx, beatIdx, hand)) {
+      onSelectCell(null);
+    } else {
+      onSelectCell({ rowIdx, beatIdx, hand });
+    }
+  };
+
   return (
     <div className="space-y-3">
       {rows.map((row, rowIdx) => (
@@ -35,9 +53,9 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, onBeatChange, onDe
                   <BeatCell
                     value={right}
                     hand="right"
-                    onChange={(val) => onBeatChange(rowIdx, beatIdx, "right", val)}
+                    isSelected={isSelected(rowIdx, beatIdx, "right")}
+                    onSelect={() => handleSelect(rowIdx, beatIdx, "right")}
                   />
-                  {/* Bar divider */}
                   {(beatIdx + 1) % beatsPerBar === 0 && beatIdx < row.length - 1 && (
                     <div className="w-px h-6 bg-bar-divider mx-1" />
                   )}
@@ -54,7 +72,8 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, onBeatChange, onDe
                   <BeatCell
                     value={left}
                     hand="left"
-                    onChange={(val) => onBeatChange(rowIdx, beatIdx, "left", val)}
+                    isSelected={isSelected(rowIdx, beatIdx, "left")}
+                    onSelect={() => handleSelect(rowIdx, beatIdx, "left")}
                   />
                   {(beatIdx + 1) % beatsPerBar === 0 && beatIdx < row.length - 1 && (
                     <div className="w-px h-6 bg-bar-divider mx-1" />
