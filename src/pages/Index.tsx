@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { ComposerGrid } from "@/components/ComposerGrid";
 import { VirtualKeyboard } from "@/components/VirtualKeyboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
-import { decodeState, encodeState, createEmptyRow, type ComposerState } from "@/lib/composer-state";
+import { decodeState, encodeState, createEmptyRow, type ComposerState, type Beat } from "@/lib/composer-state";
 import { SettingsContext, loadSettings, saveSettings, applyColorVars, type Settings } from "@/lib/settings";
 import { Plus, RotateCcw } from "lucide-react";
 
@@ -33,22 +33,60 @@ const Index = () => {
     setSearchParams(encodeState(newState), { replace: true });
   }, [setSearchParams]);
 
-  const handleKeyPress = useCallback((value: string | null) => {
+  // Get notes currently set in the selected cell
+  const activeNotes = useMemo<string[]>(() => {
+    if (!selectedCell) return [];
+    const { rowIdx, beatIdx, hand } = selectedCell;
+    const beat = state.rows[rowIdx]?.[beatIdx];
+    if (!beat) return [];
+    return hand === "right" ? beat[0] : beat[1];
+  }, [selectedCell, state]);
+
+  // Toggle a note in the selected cell; auto-advance if adding a note to a new cell
+  const handleKeyPress = useCallback((value: string) => {
     if (!selectedCell) return;
     const { rowIdx, beatIdx, hand } = selectedCell;
-    const newRows = state.rows.map((row, ri) => {
+    const totalBeats = state.beatsPerBar * state.barsPerRow;
+
+    const newRows = state.rows.map((row, ri): Beat[] => {
       if (ri !== rowIdx) return row;
-      return row.map((beat, bi): [string | null, string | null] => {
+      return row.map((beat, bi): Beat => {
         if (bi !== beatIdx) return beat;
-        return hand === "right" ? [value, beat[1]] : [beat[0], value];
+        const handNotes = hand === "right" ? beat[0] : beat[1];
+        let updated: string[];
+        if (handNotes.includes(value)) {
+          // Toggle off
+          updated = handNotes.filter(n => n !== value);
+        } else if (handNotes.length < 3) {
+          // Add note
+          updated = [...handNotes, value];
+        } else {
+          return beat; // at max capacity
+        }
+        return hand === "right" ? [updated, beat[1]] : [beat[0], updated];
+      });
+    });
+
+    const wasEmpty = activeNotes.length === 0;
+    updateState({ ...state, rows: newRows });
+
+    // Auto-advance only when adding to an empty cell (first note tap)
+    if (wasEmpty && beatIdx + 1 < totalBeats) {
+      setSelectedCell({ rowIdx, beatIdx: beatIdx + 1, hand });
+    }
+  }, [selectedCell, state, updateState, activeNotes]);
+
+  const handleClearAll = useCallback(() => {
+    if (!selectedCell) return;
+    const { rowIdx, beatIdx, hand } = selectedCell;
+    const newRows = state.rows.map((row, ri): Beat[] => {
+      if (ri !== rowIdx) return row;
+      return row.map((beat, bi): Beat => {
+        if (bi !== beatIdx) return beat;
+        return hand === "right" ? [[], beat[1]] : [beat[0], []];
       });
     });
     updateState({ ...state, rows: newRows });
-    // Auto-advance to next beat
-    const totalBeats = state.beatsPerBar * state.barsPerRow;
-    if (beatIdx + 1 < totalBeats) {
-      setSelectedCell({ rowIdx, beatIdx: beatIdx + 1, hand });
-    }
   }, [selectedCell, state, updateState]);
 
   const addRow = useCallback(() => {
@@ -68,9 +106,9 @@ const Index = () => {
     if (val < 1 || val > 16) return;
     const newState = { ...state, [field]: val };
     const totalBeats = newState.beatsPerBar * newState.barsPerRow;
-    newState.rows = newState.rows.map(row => {
-      return Array.from({ length: totalBeats }, (_, i) => row[i] ?? [null, null]);
-    });
+    newState.rows = newState.rows.map(row =>
+      Array.from({ length: totalBeats }, (_, i): Beat => row[i] ?? [[], []])
+    );
     updateState(newState);
   }, [state, updateState]);
 
@@ -150,7 +188,12 @@ const Index = () => {
       </div>
 
       {/* Virtual Keyboard */}
-      <VirtualKeyboard selectedCell={selectedCell} onKeyPress={handleKeyPress} />
+      <VirtualKeyboard
+        selectedCell={selectedCell}
+        activeNotes={activeNotes}
+        onKeyPress={handleKeyPress}
+        onClearAll={handleClearAll}
+      />
     </SettingsContext.Provider>
   );
 };

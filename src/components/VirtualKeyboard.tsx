@@ -10,10 +10,12 @@ interface SelectedCell {
 
 interface VirtualKeyboardProps {
   selectedCell: SelectedCell | null;
-  onKeyPress: (value: string | null) => void;
+  activeNotes: string[];          // notes currently set in the selected cell
+  onKeyPress: (value: string) => void;   // toggle a note on/off
+  onClearAll: () => void;                // clear all notes in cell
 }
 
-export function VirtualKeyboard({ selectedCell, onKeyPress }: VirtualKeyboardProps) {
+export function VirtualKeyboard({ selectedCell, activeNotes, onKeyPress, onClearAll }: VirtualKeyboardProps) {
   const { settings } = useSettings();
 
   if (!selectedCell) return null;
@@ -29,15 +31,31 @@ export function VirtualKeyboard({ selectedCell, onKeyPress }: VirtualKeyboardPro
           <span className="text-[10px] text-muted-foreground">
             Row {selectedCell.rowIdx + 1}, Beat {selectedCell.beatIdx + 1}
           </span>
+          {activeNotes.length > 0 && (
+            <span className="text-[10px] text-muted-foreground ml-1">
+              · {activeNotes.length}/3 note{activeNotes.length !== 1 ? "s" : ""}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
           {settings.keyboardKeys.map((key, i) => {
             const storageVal = noteStorageValue(key);
+            const isActive = activeNotes.includes(storageVal);
+            // Disable adding if already at 3 notes and this one isn't active
+            const isDisabled = !isActive && activeNotes.length >= 3;
+
             return (
               <button
                 key={`${key.type}-${key.value}-${i}`}
                 onClick={() => onKeyPress(storageVal)}
-                className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg bg-secondary hover:bg-accent text-foreground font-mono text-sm font-semibold transition-colors border border-border"
+                disabled={isDisabled}
+                className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg font-mono text-sm font-semibold transition-colors border
+                  ${isActive
+                    ? "bg-primary text-primary-foreground border-primary ring-2 ring-ring"
+                    : isDisabled
+                      ? "bg-secondary/40 text-muted-foreground/40 border-border cursor-not-allowed"
+                      : "bg-secondary hover:bg-accent text-foreground border-border"
+                  }`}
               >
                 {key.type === "icon" ? (
                   <IconNote name={key.value} size={18} />
@@ -48,9 +66,9 @@ export function VirtualKeyboard({ selectedCell, onKeyPress }: VirtualKeyboardPro
             );
           })}
           <button
-            onClick={() => onKeyPress(null)}
+            onClick={onClearAll}
             className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive font-mono text-sm transition-colors border border-border"
-            title="Clear note"
+            title="Clear all notes"
           >
             <Eraser size={16} />
           </button>
