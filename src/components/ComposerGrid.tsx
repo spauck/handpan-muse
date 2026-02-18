@@ -51,7 +51,7 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, selectedCell, onSe
               {row.map(([right], beatIdx) => (
                 <div key={beatIdx} className="flex items-center">
                   <BeatCell
-                    value={right}
+                    notes={right}
                     hand="right"
                     isSelected={isSelected(rowIdx, beatIdx, "right")}
                     onSelect={() => handleSelect(rowIdx, beatIdx, "right")}
@@ -70,7 +70,7 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, selectedCell, onSe
               {row.map(([, left], beatIdx) => (
                 <div key={beatIdx} className="flex items-center">
                   <BeatCell
-                    value={left}
+                    notes={left}
                     hand="left"
                     isSelected={isSelected(rowIdx, beatIdx, "left")}
                     onSelect={() => handleSelect(rowIdx, beatIdx, "left")}

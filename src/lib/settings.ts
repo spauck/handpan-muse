@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 
 export interface KeyboardKey {
   type: "number" | "icon";
-  value: string; // number string like "1" or icon name like "heart"
+  value: string; // number string like "1" or icon name like "circle"
 }
 
 export interface Settings {
@@ -24,6 +24,12 @@ const DEFAULT_SETTINGS: Settings = {
     { type: "number", value: "7" },
     { type: "number", value: "8" },
     { type: "number", value: "9" },
+    { type: "icon", value: "circle" },
+    { type: "icon", value: "ghost" },
+    { type: "icon", value: "music" },
+    { type: "icon", value: "star" },
+    { type: "icon", value: "heart" },
+    { type: "icon", value: "zap" },
   ],
 };
 
