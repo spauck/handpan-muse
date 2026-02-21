@@ -5,12 +5,14 @@ export type Row = Beat[];
 export interface ComposerState {
   beatsPerBar: number;
   barsPerRow: number;
+  notesPerCount: number;
   rows: Row[];
 }
 
 const DEFAULT_STATE: ComposerState = {
   beatsPerBar: 4,
   barsPerRow: 2,
+  notesPerCount: 1,
   rows: [[]],
 };
 
@@ -53,13 +55,14 @@ export function encodeState(state: ComposerState): string {
   const rows = state.rows.map(row =>
     row.map(encodeBeat).join(",")
   ).join("|");
-  return `b=${state.beatsPerBar}&r=${state.barsPerRow}&d=${encodeURIComponent(rows)}`;
+  return `b=${state.beatsPerBar}&r=${state.barsPerRow}&n=${state.notesPerCount}&d=${encodeURIComponent(rows)}`;
 }
 
 export function decodeState(search: string): ComposerState {
   const params = new URLSearchParams(search);
   const b = parseInt(params.get("b") || "");
   const r = parseInt(params.get("r") || "");
+  const n = parseInt(params.get("n") || "1") || 1;
   const d = params.get("d");
 
   if (!b || !r || !d) {
@@ -70,7 +73,7 @@ export function decodeState(search: string): ComposerState {
     rowStr.split(",").map(decodeBeat)
   );
 
-  return { beatsPerBar: b, barsPerRow: r, rows };
+  return { beatsPerBar: b, barsPerRow: r, notesPerCount: n, rows };
 }
 
 export function createEmptyRow(beatsPerBar: number, barsPerRow: number): Row {

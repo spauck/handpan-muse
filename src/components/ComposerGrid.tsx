@@ -11,12 +11,25 @@ interface ComposerGridProps {
   rows: Row[];
   beatsPerBar: number;
   barsPerRow: number;
+  notesPerCount: number;
   selectedCell: SelectedCell | null;
   onSelectCell: (cell: SelectedCell | null) => void;
   onDeleteRow: (rowIdx: number) => void;
 }
 
-export function ComposerGrid({ rows, beatsPerBar, barsPerRow, selectedCell, onSelectCell, onDeleteRow }: ComposerGridProps) {
+/** Generate count labels for a single beat based on notesPerCount */
+function getCountLabels(beatNumber: number, notesPerCount: number): string[] {
+  const num = String(beatNumber);
+  switch (notesPerCount) {
+    case 1: return [num];
+    case 2: return [num, "."];
+    case 3: return [num, "&", "."];
+    case 4: return [num, ".", "&", "."];
+    default: return [num, ...Array.from({ length: notesPerCount - 1 }, () => ".")];
+  }
+}
+
+export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, selectedCell, onSelectCell, onDeleteRow }: ComposerGridProps) {
   const isSelected = (rowIdx: number, beatIdx: number, hand: "right" | "left") =>
     selectedCell?.rowIdx === rowIdx && selectedCell?.beatIdx === beatIdx && selectedCell?.hand === hand;
 
@@ -27,6 +40,15 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, selectedCell, onSe
       onSelectCell({ rowIdx, beatIdx, hand });
     }
   };
+
+  // Build count labels for a full row
+  const totalBeats = beatsPerBar * barsPerRow;
+  const countLabels: string[] = [];
+  for (let beat = 0; beat < totalBeats; beat++) {
+    const beatInBar = beat % beatsPerBar;
+    const labels = getCountLabels(beatInBar + 1, notesPerCount);
+    countLabels.push(...labels);
+  }
 
   return (
     <div className="space-y-3">
@@ -43,7 +65,36 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, selectedCell, onSe
               </button>
             )}
           </div>
-          <div className="text-[10px] text-muted-foreground mb-1.5 font-mono">Row {rowIdx + 1}</div>
+          <div className="text-[10px] text-muted-foreground mb-1 font-mono">Row {rowIdx + 1}</div>
+
+          {/* Count labels */}
+          <div className="flex items-center gap-0.5 mb-0.5">
+            <span className="w-4 shrink-0" />
+            <div className="flex items-center gap-0.5">
+              {row.map((_beat, beatIdx) => {
+                const isBarEnd = (beatIdx + 1) % beatsPerBar === 0 && beatIdx < row.length - 1;
+                const posInBar = beatIdx % beatsPerBar;
+                const countGroup = Math.floor(posInBar / notesPerCount);
+                const subIdx = posInBar % notesPerCount;
+                const labels = getCountLabels(countGroup + 1, notesPerCount);
+                const label = labels[subIdx] || ".";
+
+                return (
+                  <div key={beatIdx} className="flex items-center">
+                    <div className="w-7 sm:w-8 flex items-center justify-center">
+                      <span className={`text-[9px] font-mono ${subIdx === 0 ? "text-muted-foreground font-semibold" : "text-muted-foreground/50"}`}>
+                        {label}
+                      </span>
+                    </div>
+                    {isBarEnd && (
+                      <div className="w-px h-3 mx-1 opacity-0" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Right hand row */}
           <div className="flex items-center gap-0.5 mb-0.5">
             <span className="text-[10px] text-hand-right font-mono w-4 shrink-0">R</span>
