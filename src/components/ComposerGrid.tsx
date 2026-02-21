@@ -12,12 +12,13 @@ interface ComposerGridProps {
   beatsPerBar: number;
   barsPerRow: number;
   notesPerCount: number;
+  viewMode?: boolean;
   selectedCell: SelectedCell | null;
   onSelectCell: (cell: SelectedCell | null) => void;
   onDeleteRow: (rowIdx: number) => void;
 }
 
-/** Generate count labels for a single beat based on notesPerCount */
+/** Generate count labels for a single count group */
 function getCountLabels(beatNumber: number, notesPerCount: number): string[] {
   const num = String(beatNumber);
   switch (notesPerCount) {
@@ -29,11 +30,12 @@ function getCountLabels(beatNumber: number, notesPerCount: number): string[] {
   }
 }
 
-export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, selectedCell, onSelectCell, onDeleteRow }: ComposerGridProps) {
+export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, viewMode, selectedCell, onSelectCell, onDeleteRow }: ComposerGridProps) {
   const isSelected = (rowIdx: number, beatIdx: number, hand: "right" | "left") =>
-    selectedCell?.rowIdx === rowIdx && selectedCell?.beatIdx === beatIdx && selectedCell?.hand === hand;
+    !viewMode && selectedCell?.rowIdx === rowIdx && selectedCell?.beatIdx === beatIdx && selectedCell?.hand === hand;
 
   const handleSelect = (rowIdx: number, beatIdx: number, hand: "right" | "left") => {
+    if (viewMode) return;
     if (isSelected(rowIdx, beatIdx, hand)) {
       onSelectCell(null);
     } else {
@@ -41,41 +43,34 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, sel
     }
   };
 
-  // Build count labels for a full row
-  const totalBeats = beatsPerBar * barsPerRow;
-  const countLabels: string[] = [];
-  for (let beat = 0; beat < totalBeats; beat++) {
-    const beatInBar = beat % beatsPerBar;
-    const labels = getCountLabels(beatInBar + 1, notesPerCount);
-    countLabels.push(...labels);
-  }
-
   return (
     <div className="space-y-3">
       {rows.map((row, rowIdx) => (
-        <div key={rowIdx} className="bg-card rounded-lg p-3 sm:p-4 border border-border group relative">
-          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            {rows.length > 1 && (
-              <button
-                onClick={() => onDeleteRow(rowIdx)}
-                className="text-muted-foreground hover:text-destructive text-xs px-1.5 py-0.5 rounded hover:bg-secondary"
-                title="Delete row"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-          <div className="text-[10px] text-muted-foreground mb-1 font-mono">Row {rowIdx + 1}</div>
+        <div key={rowIdx} className={`bg-card rounded-lg p-3 sm:p-4 border border-border group relative ${viewMode ? "" : ""}`}>
+          {!viewMode && (
+            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {rows.length > 1 && (
+                <button
+                  onClick={() => onDeleteRow(rowIdx)}
+                  className="text-muted-foreground hover:text-destructive text-xs px-1.5 py-0.5 rounded hover:bg-secondary"
+                  title="Delete row"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          )}
+          {!viewMode && <div className="text-[10px] text-muted-foreground mb-1 font-mono">Row {rowIdx + 1}</div>}
 
-          {/* Count labels */}
+          {/* Count labels — continuous across the row, not resetting per bar */}
           <div className="flex items-center gap-0.5 mb-0.5">
             <span className="w-4 shrink-0" />
             <div className="flex items-center gap-0.5">
               {row.map((_beat, beatIdx) => {
                 const isBarEnd = (beatIdx + 1) % beatsPerBar === 0 && beatIdx < row.length - 1;
-                const posInBar = beatIdx % beatsPerBar;
-                const countGroup = Math.floor(posInBar / notesPerCount);
-                const subIdx = posInBar % notesPerCount;
+                // Use absolute position in the row for counting
+                const countGroup = Math.floor(beatIdx / notesPerCount);
+                const subIdx = beatIdx % notesPerCount;
                 const labels = getCountLabels(countGroup + 1, notesPerCount);
                 const label = labels[subIdx] || ".";
 
