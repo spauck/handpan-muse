@@ -102,13 +102,15 @@ const Index = () => {
     if (selectedCell?.rowIdx === idx) setSelectedCell(null);
   }, [state, updateState, selectedCell]);
 
-  const handleConfigChange = useCallback((field: "beatsPerBar" | "barsPerRow", val: number) => {
+  const handleConfigChange = useCallback((field: "beatsPerBar" | "barsPerRow" | "notesPerCount", val: number) => {
     if (val < 1 || val > 16) return;
     const newState = { ...state, [field]: val };
-    const totalBeats = newState.beatsPerBar * newState.barsPerRow;
-    newState.rows = newState.rows.map(row =>
-      Array.from({ length: totalBeats }, (_, i): Beat => row[i] ?? [[], []])
-    );
+    if (field !== "notesPerCount") {
+      const totalBeats = newState.beatsPerBar * newState.barsPerRow;
+      newState.rows = newState.rows.map(row =>
+        Array.from({ length: totalBeats }, (_, i): Beat => row[i] ?? [[], []])
+      );
+    }
     updateState(newState);
   }, [state, updateState]);
 
@@ -153,7 +155,17 @@ const Index = () => {
                 onChange={(e) => handleConfigChange("barsPerRow", parseInt(e.target.value))}
                 className="bg-secondary text-foreground rounded px-2 py-1 text-sm font-mono border border-border"
               >
-                {[1, 2, 3, 4].map(n => <option key={n} value={n}>{n}</option>)}
+             {[1, 2, 3, 4].map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm text-secondary-foreground">
+              <span className="text-muted-foreground">Notes/count</span>
+              <select
+                value={state.notesPerCount}
+                onChange={(e) => handleConfigChange("notesPerCount", parseInt(e.target.value))}
+                className="bg-secondary text-foreground rounded px-2 py-1 text-sm font-mono border border-border"
+              >
+                {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </label>
             <button
@@ -171,6 +183,7 @@ const Index = () => {
             rows={state.rows}
             beatsPerBar={state.beatsPerBar}
             barsPerRow={state.barsPerRow}
+            notesPerCount={state.notesPerCount}
             selectedCell={selectedCell}
             onSelectCell={setSelectedCell}
             onDeleteRow={deleteRow}
