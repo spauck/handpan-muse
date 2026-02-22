@@ -2,10 +2,11 @@ import { useCallback, useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ComposerGrid } from "@/components/ComposerGrid";
 import { VirtualKeyboard } from "@/components/VirtualKeyboard";
+import { PanScriptKeyboard } from "@/components/PanScriptKeyboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { decodeState, encodeState, createEmptyRow, type ComposerState, type Beat } from "@/lib/composer-state";
 import { SettingsContext, loadSettings, saveSettings, applyColorVars, type Settings } from "@/lib/settings";
-import { Plus, RotateCcw, Eye, Pencil } from "lucide-react";
+import { Plus, RotateCcw, Eye, Pencil, Music, Circle } from "lucide-react";
 
 interface SelectedCell {
   rowIdx: number;
@@ -153,6 +154,23 @@ const Index = () => {
                 {viewMode ? <Pencil className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 {viewMode ? "Edit" : "View"}
               </button>
+              {!viewMode && (
+                <button
+                  onClick={() => {
+                    const newMode = settings.noteMode === "standard" ? "panscript" : "standard";
+                    handleUpdateSettings({ ...settings, noteMode: newMode });
+                  }}
+                  className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border ${
+                    settings.noteMode === "panscript"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
+                  }`}
+                  title={settings.noteMode === "panscript" ? "Switch to standard mode" : "Switch to PanScript mode"}
+                >
+                  {settings.noteMode === "panscript" ? <Music className="w-3.5 h-3.5" /> : <Circle className="w-3.5 h-3.5" />}
+                  {settings.noteMode === "panscript" ? "Standard" : "PanScript"}
+                </button>
+              )}
               {!viewMode && <SettingsPanel />}
             </div>
           </div>
@@ -227,8 +245,17 @@ const Index = () => {
       </div>
 
       {/* Virtual Keyboard — hidden in view mode */}
-      {!viewMode && (
+      {!viewMode && settings.noteMode === "standard" && (
         <VirtualKeyboard
+          selectedCell={selectedCell}
+          activeNotes={activeNotes}
+          onKeyPress={handleKeyPress}
+          onClearAll={handleClearAll}
+        />
+      )}
+      {!viewMode && settings.noteMode === "panscript" && (
+        <PanScriptKeyboard
+          fields={settings.panscriptFields}
           selectedCell={selectedCell}
           activeNotes={activeNotes}
           onKeyPress={handleKeyPress}
