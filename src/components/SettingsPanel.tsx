@@ -116,6 +116,21 @@ export function SettingsPanel() {
             </div>
           </section>
 
+          {/* PanScript Fields */}
+          <section>
+            <h3 className="text-sm font-semibold text-foreground mb-3">PanScript Tone Fields</h3>
+            <p className="text-xs text-muted-foreground mb-2">Number of tone fields on your handpan (excluding ding)</p>
+            <select
+              value={settings.panscriptFields}
+              onChange={(e) => updateSettings({ ...settings, panscriptFields: parseInt(e.target.value) })}
+              className="bg-secondary text-foreground rounded px-2 py-1 text-sm font-mono border border-border"
+            >
+              {[7, 8, 9, 10, 11, 12].map(n => (
+                <option key={n} value={n}>{n} ({n}+1)</option>
+              ))}
+            </select>
+          </section>
+
           {/* Keyboard Keys */}
           <section>
             <h3 className="text-sm font-semibold text-foreground mb-3">Keyboard Keys</h3>

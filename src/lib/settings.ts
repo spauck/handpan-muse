@@ -1,5 +1,7 @@
 import { createContext, useContext } from "react";
 
+export type NoteMode = "standard" | "panscript";
+
 export interface KeyboardKey {
   type: "number" | "icon";
   value: string; // number string like "1" or icon name like "circle"
@@ -9,11 +11,15 @@ export interface Settings {
   rightHandColor: string; // HSL like "210 80% 60%"
   leftHandColor: string;
   keyboardKeys: KeyboardKey[];
+  noteMode: NoteMode;
+  panscriptFields: number; // number of tone fields (excluding ding)
 }
 
 const DEFAULT_SETTINGS: Settings = {
   rightHandColor: "210 80% 60%",
   leftHandColor: "0 70% 58%",
+  noteMode: "standard",
+  panscriptFields: 8,
   keyboardKeys: [
     { type: "number", value: "1" },
     { type: "number", value: "2" },
