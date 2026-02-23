@@ -1,6 +1,6 @@
 import { BeatCell } from "./BeatCell";
 import { IconNote } from "./IconNote";
-import { PanScriptGlyph } from "./PanScriptGlyph";
+import { PanScriptGlyph, CompositeGlyph } from "./PanScriptGlyph";
 import { noteDisplayValue, useSettings } from "@/lib/settings";
 import type { Row } from "@/lib/composer-state";
 
@@ -158,41 +158,47 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, vie
   );
 }
 
-/** Collapsed cell: stacks right-hand notes on top, left-hand below */
+/** Collapsed cell: merges R+L into a single display */
 function CollapsedCell({ right, left }: { right: string[]; left: string[] }) {
   const { settings } = useSettings();
   const rightEmpty = right.length === 0;
   const leftEmpty = left.length === 0;
   const bothEmpty = rightEmpty && leftEmpty;
 
-  const isPanScriptRight = right.some(n => n.startsWith("p"));
-  const isPanScriptLeft = left.some(n => n.startsWith("p"));
+  const isPanScriptRight = !rightEmpty && right.some(n => n.startsWith("p"));
+  const isPanScriptLeft = !leftEmpty && left.some(n => n.startsWith("p"));
 
+  const parsePositions = (notes: string[]) =>
+    notes.filter(n => n.startsWith("p")).map(n => parseInt(n.slice(1), 10)).filter(n => !isNaN(n));
+
+  // If either hand is panscript, render a composite glyph
+  if (isPanScriptRight || isPanScriptLeft) {
+    return (
+      <div className="w-7 h-9 sm:w-8 sm:h-10 flex items-center justify-center rounded select-none">
+        {bothEmpty ? (
+          <span className="text-sm text-beat-empty">·</span>
+        ) : (
+          <CompositeGlyph
+            fields={settings.panscriptFields}
+            rightActive={isPanScriptRight ? parsePositions(right) : []}
+            leftActive={isPanScriptLeft ? parsePositions(left) : []}
+            size={26}
+            rightColor={`hsl(${settings.rightHandColor})`}
+            leftColor={`hsl(${settings.leftHandColor})`}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Standard notes: stack R on top, L below with respective colors
   const renderNotes = (notes: string[], hand: "right" | "left") => {
-    const isPanScript = notes.some(n => n.startsWith("p"));
-    if (isPanScript) {
-      const activePositions = notes
-        .filter(n => n.startsWith("p"))
-        .map(n => parseInt(n.slice(1), 10))
-        .filter(n => !isNaN(n));
-      const hslColor = hand === "right" ? settings.rightHandColor : settings.leftHandColor;
-      return (
-        <PanScriptGlyph
-          fields={settings.panscriptFields}
-          active={activePositions}
-          size={18}
-          color={`hsl(${hslColor})`}
-        />
-      );
-    }
     const colorClass = hand === "right" ? "text-hand-right" : "text-hand-left";
     return (
       <div className={`flex flex-col items-center gap-px ${colorClass} font-semibold`}>
         {notes.map((v, i) => {
           const parsed = noteDisplayValue(v);
-          if (parsed.type === "icon") {
-            return <IconNote key={i} name={parsed.value} size={10} />;
-          }
+          if (parsed.type === "icon") return <IconNote key={i} name={parsed.value} size={10} />;
           return <span key={i} className="leading-none text-[10px]">{parsed.value}</span>;
         })}
       </div>
