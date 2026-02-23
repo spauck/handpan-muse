@@ -6,7 +6,7 @@ import { PanScriptKeyboard } from "@/components/PanScriptKeyboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { decodeState, encodeState, createEmptyRow, type ComposerState, type Beat } from "@/lib/composer-state";
 import { SettingsContext, loadSettings, saveSettings, applyColorVars, type Settings } from "@/lib/settings";
-import { Plus, RotateCcw, Eye, Pencil, Music, Circle } from "lucide-react";
+import { Plus, RotateCcw, Eye, Pencil, Music, Circle, Rows3, Rows2 } from "lucide-react";
 
 interface SelectedCell {
   rowIdx: number;
@@ -20,6 +20,7 @@ const Index = () => {
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
   const [viewMode, setViewMode] = useState(false);
+  const [viewCollapsed, setViewCollapsed] = useState(true);
 
   useEffect(() => {
     applyColorVars(settings);
@@ -154,6 +155,20 @@ const Index = () => {
                 {viewMode ? <Pencil className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 {viewMode ? "Edit" : "View"}
               </button>
+              {viewMode && (
+                <button
+                  onClick={() => setViewCollapsed(v => !v)}
+                  className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border ${
+                    viewCollapsed
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
+                  }`}
+                  title={viewCollapsed ? "Expand to separate R/L rows" : "Collapse R/L into single row"}
+                >
+                  {viewCollapsed ? <Rows3 className="w-3.5 h-3.5" /> : <Rows2 className="w-3.5 h-3.5" />}
+                  {viewCollapsed ? "Expand" : "Collapse"}
+                </button>
+              )}
               {!viewMode && (
                 <button
                   onClick={() => {
@@ -226,6 +241,7 @@ const Index = () => {
             barsPerRow={state.barsPerRow}
             notesPerCount={state.notesPerCount}
             viewMode={viewMode}
+            collapsed={viewMode && viewCollapsed}
             selectedCell={selectedCell}
             onSelectCell={setSelectedCell}
             onDeleteRow={deleteRow}
