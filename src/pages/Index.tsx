@@ -4,6 +4,7 @@ import { ComposerGrid } from "@/components/ComposerGrid";
 import { VirtualKeyboard } from "@/components/VirtualKeyboard";
 import { PanScriptKeyboard } from "@/components/PanScriptKeyboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
+import { CompositionManager } from "@/components/CompositionManager";
 import { decodeState, encodeState, createEmptyRow, type ComposerState, type Beat } from "@/lib/composer-state";
 import { SettingsContext, loadSettings, saveSettings, applyColorVars, type Settings } from "@/lib/settings";
 import { Plus, RotateCcw, Eye, Pencil, Music, Circle, Rows3, Rows2 } from "lucide-react";
@@ -21,6 +22,23 @@ const Index = () => {
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
   const [viewMode, setViewMode] = useState(false);
   const [viewCollapsed, setViewCollapsed] = useState(true);
+  const [loadedName, setLoadedName] = useState<string | null>(null);
+  const [lastSavedQuery, setLastSavedQuery] = useState<string | null>(null);
+
+  const currentQuery = encodeState(state);
+  const hasUnsavedChanges = lastSavedQuery !== null ? currentQuery !== lastSavedQuery : searchParams.toString() !== "";
+
+  const handleLoad = useCallback((queryString: string, name: string) => {
+    setSearchParams(queryString, { replace: true });
+    setLoadedName(name);
+    setLastSavedQuery(queryString);
+    setSelectedCell(null);
+  }, [setSearchParams]);
+
+  const handleSaved = useCallback((name: string) => {
+    setLoadedName(name);
+    setLastSavedQuery(encodeState(state));
+  }, [state]);
 
   useEffect(() => {
     applyColorVars(settings);
@@ -141,10 +159,23 @@ const Index = () => {
                   Tap a cell, then use the keyboard below · <span className="text-hand-right">Right</span> · <span className="text-hand-left">Left</span> · Share via URL
                 </p>
               )}
+              {!viewMode && (
+                <span className="text-xs text-muted-foreground">
+                  {loadedName && <span className="font-medium text-foreground">{loadedName}</span>}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2">
+              {!viewMode && (
+                <CompositionManager
+                  state={state}
+                  loadedName={loadedName}
+                  onLoad={handleLoad}
+                  hasUnsavedChanges={hasUnsavedChanges}
+                  onSaved={handleSaved}
+                />
+              )}
               <button
-                onClick={toggleViewMode}
                 className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border ${
                   viewMode
                     ? "bg-primary text-primary-foreground border-primary"
