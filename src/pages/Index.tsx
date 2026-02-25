@@ -7,7 +7,7 @@ import { SettingsPanel } from "@/components/SettingsPanel";
 import { CompositionManager } from "@/components/CompositionManager";
 import { decodeState, encodeState, createEmptyRow, type ComposerState, type Beat } from "@/lib/composer-state";
 import { SettingsContext, loadSettings, saveSettings, applyColorVars, type Settings } from "@/lib/settings";
-import { Plus, RotateCcw, Eye, Pencil, Music, Circle, Rows3, Rows2 } from "lucide-react";
+import { Plus, RotateCcw, Eye, Pencil, Music, Circle, Rows3, Rows2, ArrowLeftRight } from "lucide-react";
 
 interface SelectedCell {
   rowIdx: number;
@@ -137,6 +137,37 @@ const Index = () => {
     setSelectedCell(null);
   }, [setSearchParams]);
 
+  // Translate notes between standard numbers and panscript positions
+  // Numbers 1-N map to p1-pN, icons are preserved
+  const handleTranslateNotes = useCallback(() => {
+    const toPanscript = settings.noteMode === "standard";
+    const newRows = state.rows.map(row =>
+      row.map((beat): Beat => {
+        const convert = (notes: string[]) =>
+          notes.map(n => {
+            if (n.startsWith("icon:")) return n; // keep icons
+            if (toPanscript) {
+              // number → panscript position
+              const num = parseInt(n, 10);
+              if (!isNaN(num) && num >= 0) return `p${num}`;
+              return n;
+            } else {
+              // panscript → number
+              if (n.startsWith("p")) {
+                const num = parseInt(n.slice(1), 10);
+                if (!isNaN(num)) return String(num);
+              }
+              return n;
+            }
+          });
+        return [convert(beat[0]), convert(beat[1])];
+      })
+    );
+    const newMode = toPanscript ? "panscript" : "standard";
+    handleUpdateSettings({ ...settings, noteMode: newMode });
+    updateState({ ...state, rows: newRows });
+  }, [settings, state, handleUpdateSettings, updateState]);
+
   const toggleViewMode = useCallback(() => {
     setViewMode(v => {
       if (!v) setSelectedCell(null);
@@ -182,6 +213,7 @@ const Index = () => {
                     : "text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
                 }`}
                 title={viewMode ? "Switch to edit mode" : "Switch to view mode"}
+                onClick={toggleViewMode}
               >
                 {viewMode ? <Pencil className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 {viewMode ? "Edit" : "View"}
@@ -215,6 +247,16 @@ const Index = () => {
                 >
                   {settings.noteMode === "panscript" ? <Music className="w-3.5 h-3.5" /> : <Circle className="w-3.5 h-3.5" />}
                   {settings.noteMode === "panscript" ? "Standard" : "PanScript"}
+                </button>
+              )}
+              {!viewMode && (
+                <button
+                  onClick={handleTranslateNotes}
+                  className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
+                  title={settings.noteMode === "panscript" ? "Convert numbers to panscript positions" : "Convert panscript to numbers"}
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5" />
+                  Translate
                 </button>
               )}
               {!viewMode && <SettingsPanel />}
