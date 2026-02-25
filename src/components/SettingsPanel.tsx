@@ -5,6 +5,13 @@ import { useSettings, type KeyboardKey } from "@/lib/settings";
 import { IconNote, getAllIconNames } from "./IconNote";
 import { Input } from "@/components/ui/input";
 
+const COLOR_PRESETS = [
+  { label: "Red", hsl: "0 70% 58%" },
+  { label: "Green", hsl: "140 60% 45%" },
+  { label: "Blue", hsl: "210 80% 60%" },
+  { label: "Neutral", hsl: "220 10% 55%" },
+] as const;
+
 export function SettingsPanel() {
   const { settings, updateSettings } = useSettings();
   const [addMode, setAddMode] = useState<"number" | "icon">("number");
@@ -45,39 +52,6 @@ export function SettingsPanel() {
     updateSettings({ ...settings, [hand]: hsl });
   };
 
-  // Convert HSL string to hex for color input
-  const hslToHex = (hsl: string): string => {
-    const parts = hsl.match(/[\d.]+/g);
-    if (!parts || parts.length < 3) return "#4488cc";
-    const h = parseFloat(parts[0]);
-    const s = parseFloat(parts[1]) / 100;
-    const l = parseFloat(parts[2]) / 100;
-    const a = s * Math.min(l, 1 - l);
-    const f = (n: number) => {
-      const k = (n + h / 30) % 12;
-      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-      return Math.round(255 * color).toString(16).padStart(2, "0");
-    };
-    return `#${f(0)}${f(8)}${f(4)}`;
-  };
-
-  // Convert hex to HSL string
-  const hexToHsl = (hex: string): string => {
-    const r = parseInt(hex.slice(1, 3), 16) / 255;
-    const g = parseInt(hex.slice(3, 5), 16) / 255;
-    const b = parseInt(hex.slice(5, 7), 16) / 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    const l = (max + min) / 2;
-    if (max === min) return `0 0% ${Math.round(l * 100)}%`;
-    const d = max - min;
-    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    let h = 0;
-    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-    else if (max === g) h = ((b - r) / d + 2) / 6;
-    else h = ((r - g) / d + 4) / 6;
-    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-  };
-
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -95,24 +69,33 @@ export function SettingsPanel() {
           <section>
             <h3 className="text-sm font-semibold text-foreground mb-3">Hand Colors</h3>
             <div className="space-y-3">
-              <label className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={hslToHex(settings.rightHandColor)}
-                  onChange={(e) => setColor("rightHandColor", hexToHsl(e.target.value))}
-                  className="w-8 h-8 rounded cursor-pointer border border-border"
-                />
-                <span className="text-sm" style={{ color: `hsl(${settings.rightHandColor})` }}>Right Hand</span>
-              </label>
-              <label className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={hslToHex(settings.leftHandColor)}
-                  onChange={(e) => setColor("leftHandColor", hexToHsl(e.target.value))}
-                  className="w-8 h-8 rounded cursor-pointer border border-border"
-                />
-                <span className="text-sm" style={{ color: `hsl(${settings.leftHandColor})` }}>Left Hand</span>
-              </label>
+              {(["rightHandColor", "leftHandColor"] as const).map(hand => (
+                <div key={hand} className="space-y-1.5">
+                  <span className="text-sm text-muted-foreground">{hand === "rightHandColor" ? "Right Hand" : "Left Hand"}</span>
+                  <div className="flex gap-1.5">
+                    {COLOR_PRESETS.map(preset => {
+                      const isActive = settings[hand] === preset.hsl;
+                      return (
+                        <button
+                          key={preset.label}
+                          onClick={() => setColor(hand, preset.hsl)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs border transition-colors ${
+                            isActive
+                              ? "border-ring bg-accent text-foreground font-semibold"
+                              : "border-border text-muted-foreground hover:text-foreground hover:border-ring/50"
+                          }`}
+                        >
+                          <span
+                            className="w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: `hsl(${preset.hsl})` }}
+                          />
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
 
