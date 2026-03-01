@@ -1,5 +1,6 @@
-// Each beat: [rightHandNotes[], leftHandNotes[]] where each array holds 0-3 note strings
-export type Beat = [string[], string[]];
+// Each beat: [rightHandNotes[], leftHandNotes[], anyHandNotes[]] where each array holds 0-3 note strings
+export type Hand = "right" | "left" | "any";
+export type Beat = [string[], string[], string[]];
 export type Row = Beat[];
 
 export interface ComposerState {
@@ -17,17 +18,15 @@ const DEFAULT_STATE: ComposerState = {
 };
 
 function initRow(beatsPerBar: number, barsPerRow: number): Row {
-  return Array.from({ length: beatsPerBar * barsPerRow }, () => [[], []]);
+  return Array.from({ length: beatsPerBar * barsPerRow }, () => [[], [], []]);
 }
 
-// Encode a single hand's notes array: empty → "" , one note → "1", multiple → "1+2+3"
 function encodeHand(notes: string[]): string {
   return notes.length === 0 ? "" : notes.join("+");
 }
 
-// Encode beat as "rightPart/leftPart"
 function encodeBeat(beat: Beat): string {
-  return `${encodeHand(beat[0])}/${encodeHand(beat[1])}`;
+  return `${encodeHand(beat[0])}/${encodeHand(beat[1])}/${encodeHand(beat[2])}`;
 }
 
 function decodeHand(part: string): string[] {
@@ -36,19 +35,20 @@ function decodeHand(part: string): string[] {
 }
 
 function decodeBeat(beatStr: string): Beat {
-  const slashIdx = beatStr.indexOf("/");
-  if (slashIdx === -1) {
-    // Legacy format: "r.l" — migrate on the fly
-    const dotIdx = beatStr.indexOf(".");
-    if (dotIdx === -1) return [[], []];
-    const r = beatStr.slice(0, dotIdx);
-    const l = beatStr.slice(dotIdx + 1);
-    const toArr = (v: string) => (v === "" || v === ".") ? [] : [v];
-    return [toArr(r), toArr(l)];
+  const parts = beatStr.split("/");
+  if (parts.length >= 3) {
+    return [decodeHand(parts[0]), decodeHand(parts[1]), decodeHand(parts[2])];
   }
-  const r = beatStr.slice(0, slashIdx);
-  const l = beatStr.slice(slashIdx + 1);
-  return [decodeHand(r), decodeHand(l)];
+  if (parts.length === 2) {
+    return [decodeHand(parts[0]), decodeHand(parts[1]), []];
+  }
+  // Legacy "r.l" format
+  const dotIdx = beatStr.indexOf(".");
+  if (dotIdx === -1) return [[], [], []];
+  const r = beatStr.slice(0, dotIdx);
+  const l = beatStr.slice(dotIdx + 1);
+  const toArr = (v: string) => (v === "" || v === ".") ? [] : [v];
+  return [toArr(r), toArr(l), []];
 }
 
 export function encodeState(state: ComposerState): string {
@@ -78,6 +78,28 @@ export function decodeState(search: string): ComposerState {
 
 export function createEmptyRow(beatsPerBar: number, barsPerRow: number): Row {
   return initRow(beatsPerBar, barsPerRow);
+}
+
+/** Get the hand index for a Hand type */
+export function handIndex(hand: Hand): 0 | 1 | 2 {
+  return hand === "right" ? 0 : hand === "left" ? 1 : 2;
+}
+
+/** Get all notes in a beat across all hands with their hand labels */
+export function beatAllNotes(beat: Beat): Array<{ value: string; hand: Hand }> {
+  const result: Array<{ value: string; hand: Hand }> = [];
+  for (const v of beat[0]) result.push({ value: v, hand: "right" });
+  for (const v of beat[1]) result.push({ value: v, hand: "left" });
+  for (const v of beat[2]) result.push({ value: v, hand: "any" });
+  return result;
+}
+
+/** Find which hand a note belongs to in a beat, or null */
+export function findNoteHand(beat: Beat, value: string): Hand | null {
+  if (beat[0].includes(value)) return "right";
+  if (beat[1].includes(value)) return "left";
+  if (beat[2].includes(value)) return "any";
+  return null;
 }
 
 export { DEFAULT_STATE };

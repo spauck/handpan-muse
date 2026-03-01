@@ -12,6 +12,12 @@ const COLOR_PRESETS = [
   { label: "Neutral", hsl: "220 10% 55%" },
 ] as const;
 
+const HAND_CONFIGS = [
+  { key: "rightHandColor" as const, label: "Right Hand" },
+  { key: "leftHandColor" as const, label: "Left Hand" },
+  { key: "anyHandColor" as const, label: "Any Hand" },
+];
+
 export function SettingsPanel() {
   const { settings, updateSettings } = useSettings();
   const [addMode, setAddMode] = useState<"number" | "icon">("number");
@@ -48,7 +54,7 @@ export function SettingsPanel() {
     setIconSearch("");
   };
 
-  const setColor = (hand: "rightHandColor" | "leftHandColor", hsl: string) => {
+  const setColor = (hand: "rightHandColor" | "leftHandColor" | "anyHandColor", hsl: string) => {
     updateSettings({ ...settings, [hand]: hsl });
   };
 
@@ -69,16 +75,16 @@ export function SettingsPanel() {
           <section>
             <h3 className="text-sm font-semibold text-foreground mb-3">Hand Colors</h3>
             <div className="space-y-3">
-              {(["rightHandColor", "leftHandColor"] as const).map(hand => (
-                <div key={hand} className="space-y-1.5">
-                  <span className="text-sm text-muted-foreground">{hand === "rightHandColor" ? "Right Hand" : "Left Hand"}</span>
+              {HAND_CONFIGS.map(({ key, label }) => (
+                <div key={key} className="space-y-1.5">
+                  <span className="text-sm text-muted-foreground">{label}</span>
                   <div className="flex gap-1.5">
                     {COLOR_PRESETS.map(preset => {
-                      const isActive = settings[hand] === preset.hsl;
+                      const isActive = settings[key] === preset.hsl;
                       return (
                         <button
                           key={preset.label}
-                          onClick={() => setColor(hand, preset.hsl)}
+                          onClick={() => setColor(key, preset.hsl)}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs border transition-colors ${
                             isActive
                               ? "border-ring bg-accent text-foreground font-semibold"
@@ -132,7 +138,6 @@ export function SettingsPanel() {
               ))}
             </div>
 
-            {/* Add key */}
             <div className="space-y-3">
               <div className="flex gap-2">
                 <button

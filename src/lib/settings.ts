@@ -4,20 +4,22 @@ export type NoteMode = "standard" | "panscript";
 
 export interface KeyboardKey {
   type: "number" | "icon";
-  value: string; // number string like "1" or icon name like "circle"
+  value: string;
 }
 
 export interface Settings {
   rightHandColor: string; // HSL like "210 80% 60%"
   leftHandColor: string;
+  anyHandColor: string;
   keyboardKeys: KeyboardKey[];
   noteMode: NoteMode;
-  panscriptFields: number; // number of tone fields (excluding ding)
+  panscriptFields: number;
 }
 
 const DEFAULT_SETTINGS: Settings = {
   rightHandColor: "210 80% 60%",
   leftHandColor: "0 70% 58%",
+  anyHandColor: "140 60% 45%",
   noteMode: "standard",
   panscriptFields: 8,
   keyboardKeys: [
@@ -59,6 +61,7 @@ export function saveSettings(settings: Settings) {
 export function applyColorVars(settings: Settings) {
   document.documentElement.style.setProperty("--hand-right", settings.rightHandColor);
   document.documentElement.style.setProperty("--hand-left", settings.leftHandColor);
+  document.documentElement.style.setProperty("--hand-any", settings.anyHandColor);
 }
 
 export function noteDisplayValue(val: string): { type: "number" | "icon"; value: string } {
@@ -70,6 +73,12 @@ export function noteDisplayValue(val: string): { type: "number" | "icon"; value:
 
 export function noteStorageValue(key: KeyboardKey): string {
   return key.type === "icon" ? `icon:${key.value}` : key.value;
+}
+
+export function handColorClass(hand: "right" | "left" | "any"): string {
+  if (hand === "right") return "text-hand-right";
+  if (hand === "left") return "text-hand-left";
+  return "text-hand-any";
 }
 
 interface SettingsContextValue {

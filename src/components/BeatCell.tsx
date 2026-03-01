@@ -1,27 +1,28 @@
-import { noteDisplayValue, useSettings } from "@/lib/settings";
+import { noteDisplayValue, useSettings, handColorClass } from "@/lib/settings";
 import { IconNote } from "./IconNote";
-import { PanScriptGlyph } from "./PanScriptGlyph";
+import { PanScriptGlyph, CompositeGlyph } from "./PanScriptGlyph";
+import { beatAllNotes, type Beat } from "@/lib/composer-state";
 
-interface BeatCellProps {
-  notes: string[];   // array of note values for this hand (0-3)
-  hand: "right" | "left";
+interface UnifiedBeatCellProps {
+  beat: Beat;
   isSelected: boolean;
   onSelect: () => void;
 }
 
-export function BeatCell({ notes, hand, isSelected, onSelect }: BeatCellProps) {
+export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
   const { settings } = useSettings();
-  const colorClass = hand === "right" ? "text-hand-right" : "text-hand-left";
-  const isEmpty = notes.length === 0;
-  const isPanScript = settings.noteMode === "panscript" || notes.some(n => n.startsWith("p"));
+  const allNotes = beatAllNotes(beat);
+  const isEmpty = allNotes.length === 0;
+
+  const isPanScript = allNotes.some(n => n.value.startsWith("p"));
 
   if (isPanScript && !isEmpty) {
-    const activePositions = notes
-      .filter(n => n.startsWith("p"))
-      .map(n => parseInt(n.slice(1), 10))
-      .filter(n => !isNaN(n));
+    const parsePositions = (notes: string[]) =>
+      notes.filter(n => n.startsWith("p")).map(n => parseInt(n.slice(1), 10)).filter(n => !isNaN(n));
 
-    const hslColor = hand === "right" ? settings.rightHandColor : settings.leftHandColor;
+    const rightPos = parsePositions(beat[0]);
+    const leftPos = parsePositions(beat[1]);
+    const anyPos = parsePositions(beat[2]);
 
     return (
       <button
@@ -29,39 +30,38 @@ export function BeatCell({ notes, hand, isSelected, onSelect }: BeatCellProps) {
           ${isSelected ? "ring-2 ring-ring bg-accent scale-110" : "hover:bg-secondary"}
           cursor-pointer select-none`}
         onClick={onSelect}
-        title={`${hand === "right" ? "R" : "L"}: tap to select`}
       >
-        <PanScriptGlyph
+        <CompositeGlyph
           fields={settings.panscriptFields}
-          active={activePositions}
-          size={hand === "right" ? 26 : 26}
-          color={`hsl(${hslColor})`}
+          rightActive={[...rightPos, ...anyPos]}
+          leftActive={[...leftPos, ...anyPos]}
+          size={26}
+          rightColor={`hsl(${settings.rightHandColor})`}
+          leftColor={`hsl(${settings.leftHandColor})`}
         />
       </button>
     );
   }
 
-  const renderNote = (val: string, idx: number) => {
-    const parsed = noteDisplayValue(val);
-    if (parsed.type === "icon") {
-      return <IconNote key={idx} name={parsed.value} size={12} />;
-    }
-    return <span key={idx} className="leading-none">{parsed.value}</span>;
-  };
-
   return (
     <button
       className={`w-7 h-9 sm:w-8 sm:h-10 flex flex-col items-center justify-center gap-px text-xs font-mono rounded transition-all
-        ${isEmpty ? "text-beat-empty hover:text-muted-foreground" : colorClass + " font-semibold"}
+        ${isEmpty ? "text-beat-empty hover:text-muted-foreground" : "font-semibold"}
         ${isSelected ? "ring-2 ring-ring bg-accent scale-110" : "hover:bg-secondary"}
         cursor-pointer select-none`}
       onClick={onSelect}
-      title={`${hand === "right" ? "R" : "L"}: tap to select`}
     >
       {isEmpty ? (
         <span className="text-sm">·</span>
       ) : (
-        notes.map((v, i) => renderNote(v, i))
+        allNotes.map((n, i) => {
+          const colorCls = handColorClass(n.hand);
+          const parsed = noteDisplayValue(n.value);
+          if (parsed.type === "icon") {
+            return <span key={i} className={colorCls}><IconNote name={parsed.value} size={10} /></span>;
+          }
+          return <span key={i} className={`leading-none text-[10px] ${colorCls}`}>{parsed.value}</span>;
+        })
       )}
     </button>
   );

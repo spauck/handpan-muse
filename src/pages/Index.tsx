@@ -5,14 +5,13 @@ import { VirtualKeyboard } from "@/components/VirtualKeyboard";
 import { PanScriptKeyboard } from "@/components/PanScriptKeyboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { CompositionManager } from "@/components/CompositionManager";
-import { decodeState, encodeState, createEmptyRow, type ComposerState, type Beat } from "@/lib/composer-state";
+import { decodeState, encodeState, createEmptyRow, beatAllNotes, findNoteHand, handIndex, type ComposerState, type Beat, type Hand } from "@/lib/composer-state";
 import { SettingsContext, loadSettings, saveSettings, applyColorVars, type Settings } from "@/lib/settings";
-import { Plus, RotateCcw, Eye, Pencil, Music, Circle, Rows3, Rows2, ArrowLeftRight } from "lucide-react";
+import { Plus, RotateCcw, Eye, Pencil, Music, Circle, ArrowLeftRight } from "lucide-react";
 
 interface SelectedCell {
   rowIdx: number;
   beatIdx: number;
-  hand: "right" | "left";
 }
 
 const Index = () => {
@@ -21,7 +20,6 @@ const Index = () => {
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
   const [viewMode, setViewMode] = useState(false);
-  const [viewCollapsed, setViewCollapsed] = useState(true);
   const [loadedName, setLoadedName] = useState<string | null>(null);
   const [lastSavedQuery, setLastSavedQuery] = useState<string | null>(null);
 
@@ -54,35 +52,36 @@ const Index = () => {
     setSearchParams(encodeState(newState), { replace: true });
   }, [setSearchParams]);
 
-  // Get notes currently set in the selected cell
-  const activeNotes = useMemo<string[]>(() => {
+  // Get all notes in the selected beat with hand info
+  const activeNotes = useMemo<Array<{ value: string; hand: Hand }>>(() => {
     if (!selectedCell) return [];
-    const { rowIdx, beatIdx, hand } = selectedCell;
-    const beat = state.rows[rowIdx]?.[beatIdx];
+    const beat = state.rows[selectedCell.rowIdx]?.[selectedCell.beatIdx];
     if (!beat) return [];
-    return hand === "right" ? beat[0] : beat[1];
+    return beatAllNotes(beat);
   }, [selectedCell, state]);
 
-  // Toggle a note in the selected cell; auto-advance if adding a note to a new cell
-  const handleKeyPress = useCallback((value: string) => {
+  // Assign a note to a specific hand (add or move)
+  const handleAssignNote = useCallback((value: string, hand: Hand) => {
     if (!selectedCell) return;
-    const { rowIdx, beatIdx, hand } = selectedCell;
+    const { rowIdx, beatIdx } = selectedCell;
     const totalBeats = state.beatsPerBar * state.barsPerRow;
 
     const newRows = state.rows.map((row, ri): Beat[] => {
       if (ri !== rowIdx) return row;
       return row.map((beat, bi): Beat => {
         if (bi !== beatIdx) return beat;
-        const handNotes = hand === "right" ? beat[0] : beat[1];
-        let updated: string[];
-        if (handNotes.includes(value)) {
-          updated = handNotes.filter(n => n !== value);
-        } else if (handNotes.length < 3) {
-          updated = [...handNotes, value];
-        } else {
-          return beat;
+        // Remove from all hands first
+        const cleaned: Beat = [
+          beat[0].filter(n => n !== value),
+          beat[1].filter(n => n !== value),
+          beat[2].filter(n => n !== value),
+        ];
+        // Add to target hand
+        const hi = handIndex(hand);
+        if (cleaned[hi].length < 3) {
+          cleaned[hi] = [...cleaned[hi], value];
         }
-        return hand === "right" ? [updated, beat[1]] : [beat[0], updated];
+        return cleaned;
       });
     });
 
@@ -90,18 +89,37 @@ const Index = () => {
     updateState({ ...state, rows: newRows });
 
     if (wasEmpty && beatIdx + 1 < totalBeats) {
-      setSelectedCell({ rowIdx, beatIdx: beatIdx + 1, hand });
+      setSelectedCell({ rowIdx, beatIdx: beatIdx + 1 });
     }
   }, [selectedCell, state, updateState, activeNotes]);
 
-  const handleClearAll = useCallback(() => {
+  // Remove a note from whichever hand it's in
+  const handleRemoveNote = useCallback((value: string) => {
     if (!selectedCell) return;
-    const { rowIdx, beatIdx, hand } = selectedCell;
+    const { rowIdx, beatIdx } = selectedCell;
+
     const newRows = state.rows.map((row, ri): Beat[] => {
       if (ri !== rowIdx) return row;
       return row.map((beat, bi): Beat => {
         if (bi !== beatIdx) return beat;
-        return hand === "right" ? [[], beat[1]] : [beat[0], []];
+        return [
+          beat[0].filter(n => n !== value),
+          beat[1].filter(n => n !== value),
+          beat[2].filter(n => n !== value),
+        ];
+      });
+    });
+    updateState({ ...state, rows: newRows });
+  }, [selectedCell, state, updateState]);
+
+  const handleClearAll = useCallback(() => {
+    if (!selectedCell) return;
+    const { rowIdx, beatIdx } = selectedCell;
+    const newRows = state.rows.map((row, ri): Beat[] => {
+      if (ri !== rowIdx) return row;
+      return row.map((beat, bi): Beat => {
+        if (bi !== beatIdx) return beat;
+        return [[], [], []];
       });
     });
     updateState({ ...state, rows: newRows });
@@ -126,7 +144,7 @@ const Index = () => {
     if (field !== "notesPerCount") {
       const totalBeats = newState.beatsPerBar * newState.barsPerRow;
       newState.rows = newState.rows.map(row =>
-        Array.from({ length: totalBeats }, (_, i): Beat => row[i] ?? [[], []])
+        Array.from({ length: totalBeats }, (_, i): Beat => row[i] ?? [[], [], []])
       );
     }
     updateState(newState);
@@ -137,22 +155,18 @@ const Index = () => {
     setSelectedCell(null);
   }, [setSearchParams]);
 
-  // Translate notes between standard numbers and panscript positions
-  // Numbers 1-N map to p1-pN, icons are preserved
   const handleTranslateNotes = useCallback(() => {
     const toPanscript = settings.noteMode === "standard";
     const newRows = state.rows.map(row =>
       row.map((beat): Beat => {
         const convert = (notes: string[]) =>
           notes.map(n => {
-            if (n.startsWith("icon:")) return n; // keep icons
+            if (n.startsWith("icon:")) return n;
             if (toPanscript) {
-              // number → panscript position
               const num = parseInt(n, 10);
               if (!isNaN(num) && num >= 0) return `p${num}`;
               return n;
             } else {
-              // panscript → number
               if (n.startsWith("p")) {
                 const num = parseInt(n.slice(1), 10);
                 if (!isNaN(num)) return String(num);
@@ -160,7 +174,7 @@ const Index = () => {
               return n;
             }
           });
-        return [convert(beat[0]), convert(beat[1])];
+        return [convert(beat[0]), convert(beat[1]), convert(beat[2])];
       })
     );
     const newMode = toPanscript ? "panscript" : "standard";
@@ -187,16 +201,16 @@ const Index = () => {
               </h1>
               {!viewMode && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Tap a cell, then use the keyboard below · <span className="text-hand-right">Right</span> · <span className="text-hand-left">Left</span> · Share via URL
+                  Tap a cell, pick a note, assign a hand · <span className="text-hand-right">R</span> · <span className="text-hand-left">L</span> · <span className="text-hand-any">A</span>
                 </p>
               )}
-              {!viewMode && (
+              {!viewMode && loadedName && (
                 <span className="text-xs text-muted-foreground">
-                  {loadedName && <span className="font-medium text-foreground">{loadedName}</span>}
+                  <span className="font-medium text-foreground">{loadedName}</span>
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               {!viewMode && (
                 <CompositionManager
                   state={state}
@@ -218,20 +232,6 @@ const Index = () => {
                 {viewMode ? <Pencil className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 {viewMode ? "Edit" : "View"}
               </button>
-              {viewMode && (
-                <button
-                  onClick={() => setViewCollapsed(v => !v)}
-                  className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border ${
-                    viewCollapsed
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
-                  }`}
-                  title={viewCollapsed ? "Expand to separate R/L rows" : "Collapse R/L into single row"}
-                >
-                  {viewCollapsed ? <Rows3 className="w-3.5 h-3.5" /> : <Rows2 className="w-3.5 h-3.5" />}
-                  {viewCollapsed ? "Expand" : "Collapse"}
-                </button>
-              )}
               {!viewMode && (
                 <button
                   onClick={() => {
@@ -253,7 +253,7 @@ const Index = () => {
                 <button
                   onClick={handleTranslateNotes}
                   className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
-                  title={settings.noteMode === "panscript" ? "Convert numbers to panscript positions" : "Convert panscript to numbers"}
+                  title="Convert notes between standard and panscript"
                 >
                   <ArrowLeftRight className="w-3.5 h-3.5" />
                   Translate
@@ -263,7 +263,7 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Config — hidden in view mode */}
+          {/* Config */}
           {!viewMode && (
             <div className="flex flex-wrap items-center gap-4 mb-5 bg-card rounded-lg p-3 border border-border">
               <label className="flex items-center gap-2 text-sm text-secondary-foreground">
@@ -314,13 +314,11 @@ const Index = () => {
             barsPerRow={state.barsPerRow}
             notesPerCount={state.notesPerCount}
             viewMode={viewMode}
-            collapsed={viewMode && viewCollapsed}
             selectedCell={selectedCell}
             onSelectCell={setSelectedCell}
             onDeleteRow={deleteRow}
           />
 
-          {/* Add row — hidden in view mode */}
           {!viewMode && (
             <button
               onClick={addRow}
@@ -333,12 +331,12 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Virtual Keyboard — hidden in view mode */}
       {!viewMode && settings.noteMode === "standard" && (
         <VirtualKeyboard
           selectedCell={selectedCell}
           activeNotes={activeNotes}
-          onKeyPress={handleKeyPress}
+          onAssignNote={handleAssignNote}
+          onRemoveNote={handleRemoveNote}
           onClearAll={handleClearAll}
         />
       )}
@@ -347,7 +345,8 @@ const Index = () => {
           fields={settings.panscriptFields}
           selectedCell={selectedCell}
           activeNotes={activeNotes}
-          onKeyPress={handleKeyPress}
+          onAssignNote={handleAssignNote}
+          onRemoveNote={handleRemoveNote}
           onClearAll={handleClearAll}
         />
       )}
