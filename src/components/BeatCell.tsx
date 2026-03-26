@@ -26,18 +26,18 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
 
     return (
       <button
-        className={`w-7 h-9 sm:w-8 sm:h-10 flex items-center justify-center rounded transition-all
+        className={`aspect-[7/9] w-full flex items-center justify-center rounded transition-all
           ${isSelected ? "ring-2 ring-ring bg-accent scale-110" : "hover:bg-secondary"}
-          cursor-pointer select-none`}
+          cursor-pointer select-none p-0.5`}
         onClick={onSelect}
       >
         <CompositeGlyph
           fields={settings.panscriptFields}
           rightActive={[...rightPos, ...anyPos]}
           leftActive={[...leftPos, ...anyPos]}
-          size={26}
           rightColor={`hsl(${settings.rightHandColor})`}
           leftColor={`hsl(${settings.leftHandColor})`}
+          fluid
         />
       </button>
     );
@@ -45,14 +45,14 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
 
   return (
     <button
-      className={`w-7 h-9 sm:w-8 sm:h-10 flex flex-col items-center justify-center gap-px text-xs font-mono rounded transition-all
+      className={`aspect-[7/9] w-full flex flex-col items-center justify-center gap-px font-mono rounded transition-all
         ${isEmpty ? "text-beat-empty hover:text-muted-foreground" : "font-semibold"}
         ${isSelected ? "ring-2 ring-ring bg-accent scale-110" : "hover:bg-secondary"}
         cursor-pointer select-none`}
       onClick={onSelect}
     >
       {isEmpty ? (
-        <span className="text-sm">·</span>
+        <span className="text-[0.6em]">·</span>
       ) : (
         allNotes.map((n, i) => {
           const colorCls = handColorClass(n.hand);
@@ -60,7 +60,7 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
           if (parsed.type === "icon") {
             return <span key={i} className={colorCls}><IconNote name={parsed.value} size={10} /></span>;
           }
-          return <span key={i} className={`leading-none text-[10px] ${colorCls}`}>{parsed.value}</span>;
+          return <span key={i} className={`leading-none text-[0.45em] ${colorCls}`}>{parsed.value}</span>;
         })
       )}
     </button>

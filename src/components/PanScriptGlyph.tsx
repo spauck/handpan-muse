@@ -100,9 +100,11 @@ interface CompositeGlyphProps {
   size?: number;
   rightColor: string;
   leftColor: string;
+  /** When true, renders at 100% width/height instead of fixed size */
+  fluid?: boolean;
 }
 
-export function CompositeGlyph({ fields, rightActive, leftActive, size = 28, rightColor, leftColor }: CompositeGlyphProps) {
+export function CompositeGlyph({ fields, rightActive, leftActive, size = 28, rightColor, leftColor, fluid }: CompositeGlyphProps) {
   const cx = 50;
   const cy = 50;
   const outerR = 42;
@@ -149,7 +151,7 @@ export function CompositeGlyph({ fields, rightActive, leftActive, size = 28, rig
   };
 
   return (
-    <svg viewBox="0 0 100 100" width={size} height={size} className="shrink-0">
+    <svg viewBox="0 0 100 100" {...(fluid ? { width: "100%", height: "100%" } : { width: size, height: size })} className="shrink-0">
       <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="currentColor" strokeWidth={2} opacity={0.3} />
       {Array.from({ length: fields }, (_, i) => {
         const pos = getFieldPosition(i + 1, fields, cx, cy, spokeR);
