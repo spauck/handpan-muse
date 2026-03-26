@@ -45,7 +45,7 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
 
   return (
     <button
-      className={`aspect-[7/9] w-full flex flex-col items-center justify-center gap-px font-mono rounded transition-all
+      className={`aspect-[7/9] w-full relative flex items-center justify-center font-mono rounded transition-all
         ${isEmpty ? "text-beat-empty hover:text-muted-foreground" : "font-semibold"}
         ${isSelected ? "ring-2 ring-ring bg-accent scale-110" : "hover:bg-secondary"}
         cursor-pointer select-none`}
@@ -58,9 +58,17 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
           const colorCls = handColorClass(n.hand);
           const parsed = noteDisplayValue(n.value);
           if (parsed.type === "icon") {
-            return <span key={i} className={colorCls}><IconNote name={parsed.value} size={10} /></span>;
+            return (
+              <span key={i} className={`absolute inset-0 flex items-center justify-center ${colorCls}`}>
+                <IconNote name={parsed.value} className="w-[60%] h-[60%]" />
+              </span>
+            );
           }
-          return <span key={i} className={`leading-none text-[0.45em] ${colorCls}`}>{parsed.value}</span>;
+          return (
+            <span key={i} className={`absolute inset-0 flex items-center justify-center text-[0.55em] leading-none ${colorCls}`}>
+              {parsed.value}
+            </span>
+          );
         })
       )}
     </button>
