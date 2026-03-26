@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { BeatCell } from "./BeatCell";
 import type { Row } from "@/lib/composer-state";
 
@@ -41,12 +42,23 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, vie
     }
   };
 
+  // Count bar dividers per row to account for their space
+  const barDividers = useMemo(() => {
+    if (rows.length === 0) return 0;
+    const len = rows[0].length;
+    let count = 0;
+    for (let i = 1; i < len; i++) {
+      if (i % beatsPerBar === 0) count++;
+    }
+    return count;
+  }, [rows, beatsPerBar]);
+
   return (
     <div className="space-y-3">
       {rows.map((row, rowIdx) => (
         <div key={rowIdx} className="bg-card rounded-lg p-3 sm:p-4 border border-border group relative">
           {!viewMode && (
-            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
               {rows.length > 1 && (
                 <button
                   onClick={() => onDeleteRow(rowIdx)}
@@ -61,9 +73,22 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, vie
           {!viewMode && <div className="text-[10px] text-muted-foreground mb-1 font-mono">Row {rowIdx + 1}</div>}
 
           {/* Count labels */}
-          <div className="flex items-center gap-0.5 mb-0.5">
-            <span className="w-4 shrink-0" />
-            <div className="flex items-center gap-0.5">
+          <div
+            className="flex items-center mb-0.5"
+            style={{
+              gap: 0,
+              // Use CSS grid to match the beat row layout
+            }}
+          >
+            <div
+              className="grid w-full"
+              style={{
+                gridTemplateColumns: row.map((_b, i) => {
+                  const isBarEnd = (i + 1) % beatsPerBar === 0 && i < row.length - 1;
+                  return isBarEnd ? "1fr auto" : "1fr";
+                }).join(" "),
+              }}
+            >
               {row.map((_beat, beatIdx) => {
                 const isBarEnd = (beatIdx + 1) % beatsPerBar === 0 && beatIdx < row.length - 1;
                 const countGroup = Math.floor(beatIdx / notesPerCount);
@@ -72,37 +97,42 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, vie
                 const label = labels[subIdx] || ".";
 
                 return (
-                  <div key={beatIdx} className="flex items-center">
-                    <div className="w-7 sm:w-8 flex items-center justify-center">
+                  <div key={beatIdx} className="contents">
+                    <div className="flex items-center justify-center">
                       <span className={`text-[9px] font-mono ${subIdx === 0 ? "text-muted-foreground font-semibold" : "text-muted-foreground/50"}`}>
                         {label}
                       </span>
                     </div>
-                    {isBarEnd && <div className="w-px h-3 mx-1 opacity-0" />}
+                    {isBarEnd && <div className="w-px h-3 mx-0.5 opacity-0" />}
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Single unified row */}
-          <div className="flex items-center gap-0.5">
-            <span className="w-4 shrink-0" />
-            <div className="flex items-center flex-wrap gap-0.5">
-              {row.map((beat, beatIdx) => {
-                const isBarEnd = (beatIdx + 1) % beatsPerBar === 0 && beatIdx < row.length - 1;
-                return (
-                  <div key={beatIdx} className="flex items-center">
-                    <BeatCell
-                      beat={beat}
-                      isSelected={isSelected(rowIdx, beatIdx)}
-                      onSelect={() => handleSelect(rowIdx, beatIdx)}
-                    />
-                    {isBarEnd && <div className="w-px h-6 bg-bar-divider mx-1" />}
-                  </div>
-                );
-              })}
-            </div>
+          {/* Single unified row - CSS Grid for equal scaling */}
+          <div
+            className="grid w-full"
+            style={{
+              gridTemplateColumns: row.map((_b, i) => {
+                const isBarEnd = (i + 1) % beatsPerBar === 0 && i < row.length - 1;
+                return isBarEnd ? "1fr auto" : "1fr";
+              }).join(" "),
+            }}
+          >
+            {row.map((beat, beatIdx) => {
+              const isBarEnd = (beatIdx + 1) % beatsPerBar === 0 && beatIdx < row.length - 1;
+              return (
+                <div key={beatIdx} className="contents">
+                  <BeatCell
+                    beat={beat}
+                    isSelected={isSelected(rowIdx, beatIdx)}
+                    onSelect={() => handleSelect(rowIdx, beatIdx)}
+                  />
+                  {isBarEnd && <div className="w-px bg-bar-divider mx-0.5 self-stretch" />}
+                </div>
+              );
+            })}
           </div>
         </div>
       ))}
