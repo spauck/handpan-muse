@@ -73,9 +73,7 @@ const Index = () => {
           beat[2].filter(n => n !== value),
         ];
         const hi = handIndex(hand);
-        if (cleaned[hi].length < 3) {
-          cleaned[hi] = [...cleaned[hi], value];
-        }
+        cleaned[hi] = [...cleaned[hi], value];
         return cleaned;
       });
     });
