@@ -1,6 +1,7 @@
-import { useSettings, noteStorageValue, handColorClass } from "@/lib/settings";
-import { Eraser } from "lucide-react";
 import { useState } from "react";
+import { useSettings, handColorClass } from "@/lib/settings";
+import { RadialGlyph } from "./PanScriptGlyph";
+import { Eraser } from "lucide-react";
 import type { Hand } from "@/lib/composer-state";
 
 interface SelectedCell {
@@ -8,8 +9,7 @@ interface SelectedCell {
   beatIdx: number;
 }
 
-interface PanScriptKeyboardProps {
-  fields: number;
+interface PositionKeyboardProps {
   selectedCell: SelectedCell | null;
   activeNotes: Array<{ value: string; hand: Hand }>;
   onAssignNote: (value: string, hand: Hand) => void;
@@ -23,31 +23,18 @@ const HAND_OPTIONS: { hand: Hand; label: string; short: string }[] = [
   { hand: "any", label: "Any", short: "A" },
 ];
 
-function getFieldPosition(index: number, total: number, cx: number, cy: number, r: number) {
-  const angle = (-Math.PI / 2) + (2 * Math.PI * (index - 1)) / total;
-  return {
-    x: cx + r * Math.cos(angle),
-    y: cy + r * Math.sin(angle),
-  };
-}
-
-export function PanScriptKeyboard({ fields, selectedCell, activeNotes, onAssignNote, onRemoveNote, onClearAll }: PanScriptKeyboardProps) {
+export function PositionKeyboard({ selectedCell, activeNotes, onAssignNote, onRemoveNote, onClearAll }: PositionKeyboardProps) {
+  const { settings } = useSettings();
   const [pendingNote, setPendingNote] = useState<string | null>(null);
 
   if (!selectedCell) return null;
 
   const activeMap = new Map(activeNotes.map(n => [n.value, n.hand]));
   const totalNotes = activeNotes.length;
-
-  const cx = 100;
-  const cy = 100;
-  const outerR = 85;
-  const spokeR = 75;
-  const hitR = 18;
-  const dingR = 16;
+  const positions = [0, ...Array.from({ length: settings.panscriptFields }, (_, i) => i + 1)];
 
   const handleTap = (pos: number) => {
-    const val = `p${pos}`;
+    const val = String(pos);
     if (pendingNote === val) {
       setPendingNote(null);
     } else {
@@ -73,13 +60,13 @@ export function PanScriptKeyboard({ fields, selectedCell, activeNotes, onAssignN
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur border-t border-border px-3 py-2 safe-bottom">
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-center gap-1 mb-1">
+        <div className="flex items-center gap-1 mb-1.5">
           <span className="text-[10px] text-muted-foreground">
             Row {selectedCell.rowIdx + 1}, Beat {selectedCell.beatIdx + 1}
           </span>
           {totalNotes > 0 && (
             <span className="text-[10px] text-muted-foreground ml-1">
-              · {totalNotes}/3 position{totalNotes !== 1 ? "s" : ""}
+              · {totalNotes}/3 note{totalNotes !== 1 ? "s" : ""}
             </span>
           )}
         </div>
@@ -128,69 +115,50 @@ export function PanScriptKeyboard({ fields, selectedCell, activeNotes, onAssignN
           </div>
         )}
 
-        <div className="flex items-center gap-3">
-          <svg viewBox="0 0 200 200" className="w-28 h-28 sm:w-32 sm:h-32 shrink-0">
-            <circle cx={cx} cy={cy} r={outerR} fill="none" className="stroke-muted-foreground" strokeWidth={2} opacity={0.3} />
+        {/* Position buttons */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          {positions.map(pos => {
+            const val = String(pos);
+            const noteHand = activeMap.get(val);
+            const isActive = noteHand !== undefined;
+            const isPending = pendingNote === val;
+            const isDisabled = !isActive && totalNotes >= 3;
+            const activeBorderColor = isActive ? handColorClass(noteHand) : "";
+            const activeColor = isActive
+              ? noteHand === "right" ? `hsl(${settings.rightHandColor})`
+              : noteHand === "left" ? `hsl(${settings.leftHandColor})`
+              : `hsl(${settings.anyHandColor})`
+              : undefined;
 
-            {Array.from({ length: fields }, (_, i) => {
-              const pos = getFieldPosition(i + 1, fields, cx, cy, spokeR);
-              return (
-                <line key={`spoke-${i}`} x1={cx} y1={cy} x2={pos.x} y2={pos.y} className="stroke-muted-foreground" strokeWidth={1.5} opacity={0.2} />
-              );
-            })}
-
-            {/* Ding */}
-            <circle
-              cx={cx} cy={cy} r={dingR}
-              className={`cursor-pointer transition-colors ${
-                pendingNote === "p0"
-                  ? "fill-accent stroke-ring"
-                  : activeMap.has("p0")
-                    ? "fill-primary stroke-primary"
-                    : totalNotes >= 3
-                      ? "fill-none stroke-muted-foreground opacity-20 cursor-not-allowed"
-                      : "fill-none stroke-muted-foreground hover:stroke-foreground opacity-40 hover:opacity-70"
-              }`}
-              strokeWidth={2}
-              onClick={() => handleTap(0)}
-            />
-            <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" className="text-[10px] fill-muted-foreground pointer-events-none font-mono" opacity={0.5}>D</text>
-
-            {Array.from({ length: fields }, (_, i) => {
-              const pos = getFieldPosition(i + 1, fields, cx, cy, spokeR * 0.72);
-              const val = `p${i + 1}`;
-              const isActive = activeMap.has(val);
-              const isPending = pendingNote === val;
-              const isDisabled = !isActive && totalNotes >= 3;
-
-              return (
-                <g key={`field-${i}`}>
-                  <circle
-                    cx={pos.x} cy={pos.y} r={hitR}
-                    className={`cursor-pointer transition-colors ${
-                      isPending
-                        ? "fill-accent stroke-ring"
-                        : isActive
-                          ? "fill-primary stroke-primary"
-                          : isDisabled
-                            ? "fill-none stroke-muted-foreground opacity-15 cursor-not-allowed"
-                            : "fill-none stroke-muted-foreground hover:stroke-foreground opacity-30 hover:opacity-60"
-                    }`}
-                    strokeWidth={2}
-                    onClick={() => !isDisabled && handleTap(i + 1)}
-                  />
-                  <text x={pos.x} y={pos.y} textAnchor="middle" dominantBaseline="central" className="text-[9px] fill-muted-foreground pointer-events-none font-mono" opacity={0.4}>
-                    {i + 1}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
-
+            return (
+              <button
+                key={pos}
+                onClick={() => handleTap(pos)}
+                disabled={isDisabled}
+                className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg transition-colors border
+                  ${isPending
+                    ? "ring-2 ring-ring bg-accent border-ring"
+                    : isActive
+                      ? `${activeBorderColor} bg-secondary border-current`
+                      : isDisabled
+                        ? "bg-secondary/40 text-muted-foreground/40 border-border cursor-not-allowed"
+                        : "bg-secondary hover:bg-accent text-foreground border-border"
+                  }`}
+                title={pos === 0 ? "Ding" : `Field ${pos}`}
+              >
+                <RadialGlyph
+                  fields={settings.panscriptFields}
+                  active={[pos]}
+                  color={activeColor}
+                  size={24}
+                />
+              </button>
+            );
+          })}
           <button
             onClick={onClearAll}
             className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive font-mono text-sm transition-colors border border-border"
-            title="Clear all positions"
+            title="Clear all notes"
           >
             <Eraser size={16} />
           </button>

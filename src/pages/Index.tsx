@@ -1,13 +1,12 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ComposerGrid } from "@/components/ComposerGrid";
-import { VirtualKeyboard } from "@/components/VirtualKeyboard";
-import { PanScriptKeyboard } from "@/components/PanScriptKeyboard";
+import { PositionKeyboard } from "@/components/PositionKeyboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { CompositionManager } from "@/components/CompositionManager";
-import { decodeState, encodeState, createEmptyRow, beatAllNotes, findNoteHand, handIndex, type ComposerState, type Beat, type Hand } from "@/lib/composer-state";
+import { decodeState, encodeState, createEmptyRow, beatAllNotes, handIndex, type ComposerState, type Beat, type Hand } from "@/lib/composer-state";
 import { SettingsContext, loadSettings, saveSettings, applyColorVars, type Settings } from "@/lib/settings";
-import { Plus, RotateCcw, Eye, Pencil, Music, Circle, ArrowLeftRight } from "lucide-react";
+import { Plus, RotateCcw, Eye, Pencil } from "lucide-react";
 
 interface SelectedCell {
   rowIdx: number;
@@ -52,7 +51,6 @@ const Index = () => {
     setSearchParams(encodeState(newState), { replace: true });
   }, [setSearchParams]);
 
-  // Get all notes in the selected beat with hand info
   const activeNotes = useMemo<Array<{ value: string; hand: Hand }>>(() => {
     if (!selectedCell) return [];
     const beat = state.rows[selectedCell.rowIdx]?.[selectedCell.beatIdx];
@@ -60,7 +58,6 @@ const Index = () => {
     return beatAllNotes(beat);
   }, [selectedCell, state]);
 
-  // Assign a note to a specific hand (add or move)
   const handleAssignNote = useCallback((value: string, hand: Hand) => {
     if (!selectedCell) return;
     const { rowIdx, beatIdx } = selectedCell;
@@ -70,13 +67,11 @@ const Index = () => {
       if (ri !== rowIdx) return row;
       return row.map((beat, bi): Beat => {
         if (bi !== beatIdx) return beat;
-        // Remove from all hands first
         const cleaned: Beat = [
           beat[0].filter(n => n !== value),
           beat[1].filter(n => n !== value),
           beat[2].filter(n => n !== value),
         ];
-        // Add to target hand
         const hi = handIndex(hand);
         if (cleaned[hi].length < 3) {
           cleaned[hi] = [...cleaned[hi], value];
@@ -93,11 +88,9 @@ const Index = () => {
     }
   }, [selectedCell, state, updateState, activeNotes]);
 
-  // Remove a note from whichever hand it's in
   const handleRemoveNote = useCallback((value: string) => {
     if (!selectedCell) return;
     const { rowIdx, beatIdx } = selectedCell;
-
     const newRows = state.rows.map((row, ri): Beat[] => {
       if (ri !== rowIdx) return row;
       return row.map((beat, bi): Beat => {
@@ -155,33 +148,6 @@ const Index = () => {
     setSelectedCell(null);
   }, [setSearchParams]);
 
-  const handleTranslateNotes = useCallback(() => {
-    const toPanscript = settings.noteMode === "standard";
-    const newRows = state.rows.map(row =>
-      row.map((beat): Beat => {
-        const convert = (notes: string[]) =>
-          notes.map(n => {
-            if (n.startsWith("icon:")) return n;
-            if (toPanscript) {
-              const num = parseInt(n, 10);
-              if (!isNaN(num) && num >= 0) return `p${num}`;
-              return n;
-            } else {
-              if (n.startsWith("p")) {
-                const num = parseInt(n.slice(1), 10);
-                if (!isNaN(num)) return String(num);
-              }
-              return n;
-            }
-          });
-        return [convert(beat[0]), convert(beat[1]), convert(beat[2])];
-      })
-    );
-    const newMode = toPanscript ? "panscript" : "standard";
-    handleUpdateSettings({ ...settings, noteMode: newMode });
-    updateState({ ...state, rows: newRows });
-  }, [settings, state, handleUpdateSettings, updateState]);
-
   const toggleViewMode = useCallback(() => {
     setViewMode(v => {
       if (!v) setSelectedCell(null);
@@ -201,7 +167,7 @@ const Index = () => {
               </h1>
               {!viewMode && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Tap a cell, pick a note, assign a hand · <span className="text-hand-right">R</span> · <span className="text-hand-left">L</span> · <span className="text-hand-any">A</span>
+                  Tap a cell, pick a position · <span className="text-hand-right">R</span> · <span className="text-hand-left">L</span> · <span className="text-hand-any">A</span>
                 </p>
               )}
               {!viewMode && loadedName && (
@@ -232,33 +198,6 @@ const Index = () => {
                 {viewMode ? <Pencil className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 {viewMode ? "Edit" : "View"}
               </button>
-              {!viewMode && (
-                <button
-                  onClick={() => {
-                    const newMode = settings.noteMode === "standard" ? "panscript" : "standard";
-                    handleUpdateSettings({ ...settings, noteMode: newMode });
-                  }}
-                  className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border ${
-                    settings.noteMode === "panscript"
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
-                  }`}
-                  title={settings.noteMode === "panscript" ? "Switch to standard mode" : "Switch to PanScript mode"}
-                >
-                  {settings.noteMode === "panscript" ? <Music className="w-3.5 h-3.5" /> : <Circle className="w-3.5 h-3.5" />}
-                  {settings.noteMode === "panscript" ? "Standard" : "PanScript"}
-                </button>
-              )}
-              {!viewMode && (
-                <button
-                  onClick={handleTranslateNotes}
-                  className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
-                  title="Convert notes between standard and panscript"
-                >
-                  <ArrowLeftRight className="w-3.5 h-3.5" />
-                  Translate
-                </button>
-              )}
               {!viewMode && <SettingsPanel />}
             </div>
           </div>
@@ -331,18 +270,8 @@ const Index = () => {
         </div>
       </div>
 
-      {!viewMode && settings.noteMode === "standard" && (
-        <VirtualKeyboard
-          selectedCell={selectedCell}
-          activeNotes={activeNotes}
-          onAssignNote={handleAssignNote}
-          onRemoveNote={handleRemoveNote}
-          onClearAll={handleClearAll}
-        />
-      )}
-      {!viewMode && settings.noteMode === "panscript" && (
-        <PanScriptKeyboard
-          fields={settings.panscriptFields}
+      {!viewMode && (
+        <PositionKeyboard
           selectedCell={selectedCell}
           activeNotes={activeNotes}
           onAssignNote={handleAssignNote}
