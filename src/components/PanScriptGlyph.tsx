@@ -41,7 +41,7 @@ export function RadialGlyph({ fields, active, color, size = 28, fluid }: RadialG
             key={i}
             x1={x1} y1={y1} x2={x2} y2={y2}
             stroke={color || "currentColor"}
-            strokeWidth={4}
+            strokeWidth={6}
             strokeLinecap="round"
           />
         );
