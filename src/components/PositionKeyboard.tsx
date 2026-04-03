@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSettings, handColorClass } from "@/lib/settings";
 import { RadialGlyph } from "./PanScriptGlyph";
+import { IconNote, ICON_NAMES, isIconNote, getIconName } from "./IconNote";
 import { Eraser } from "lucide-react";
 import type { Hand } from "@/lib/composer-state";
 
@@ -26,6 +27,7 @@ const HAND_OPTIONS: { hand: Hand; label: string; short: string }[] = [
 export function PositionKeyboard({ selectedCell, activeNotes, onAssignNote, onRemoveNote, onClearAll }: PositionKeyboardProps) {
   const { settings } = useSettings();
   const [pendingNote, setPendingNote] = useState<string | null>(null);
+  const [showIcons, setShowIcons] = useState(false);
 
   if (!selectedCell) return null;
 
@@ -33,13 +35,8 @@ export function PositionKeyboard({ selectedCell, activeNotes, onAssignNote, onRe
   const totalNotes = activeNotes.length;
   const positions = [0, ...Array.from({ length: settings.panscriptFields }, (_, i) => i + 1)];
 
-  const handleTap = (pos: number) => {
-    const val = String(pos);
-    if (pendingNote === val) {
-      setPendingNote(null);
-    } else {
-      setPendingNote(val);
-    }
+  const handleTap = (val: string) => {
+    setPendingNote(pendingNote === val ? null : val);
   };
 
   const handleHandPick = (hand: Hand) => {
@@ -66,9 +63,17 @@ export function PositionKeyboard({ selectedCell, activeNotes, onAssignNote, onRe
           </span>
           {totalNotes > 0 && (
             <span className="text-[10px] text-muted-foreground ml-1">
-              · {totalNotes}/3 note{totalNotes !== 1 ? "s" : ""}
+              · {totalNotes} note{totalNotes !== 1 ? "s" : ""}
             </span>
           )}
+          <button
+            onClick={() => setShowIcons(v => !v)}
+            className={`ml-auto text-[10px] px-2 py-0.5 rounded border transition-colors ${
+              showIcons ? "bg-accent border-ring text-foreground" : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {showIcons ? "Positions" : "Icons"}
+          </button>
         </div>
 
         {/* Hand picker */}
@@ -80,18 +85,14 @@ export function PositionKeyboard({ selectedCell, activeNotes, onAssignNote, onRe
             {HAND_OPTIONS.map(({ hand, label, short }) => {
               const isCurrentHand = existingHand === hand;
               const colorCls = handColorClass(hand);
-              const disabled = isNewNote && totalNotes >= 3;
               return (
                 <button
                   key={hand}
                   onClick={() => handleHandPick(hand)}
-                  disabled={disabled}
                   className={`px-3 py-1 rounded text-xs font-semibold transition-colors border ${
                     isCurrentHand
                       ? `${colorCls} border-ring bg-accent`
-                      : disabled
-                        ? "text-muted-foreground/40 border-border cursor-not-allowed"
-                        : `${colorCls} border-border hover:border-ring/50 hover:bg-accent/50`
+                      : `${colorCls} border-border hover:border-ring/50 hover:bg-accent/50`
                   }`}
                 >
                   {short} · {label}
@@ -115,46 +116,78 @@ export function PositionKeyboard({ selectedCell, activeNotes, onAssignNote, onRe
           </div>
         )}
 
-        {/* Position buttons */}
+        {/* Note buttons */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          {positions.map(pos => {
-            const val = String(pos);
-            const noteHand = activeMap.get(val);
-            const isActive = noteHand !== undefined;
-            const isPending = pendingNote === val;
-            const isDisabled = !isActive && totalNotes >= 3;
-            const activeBorderColor = isActive ? handColorClass(noteHand) : "";
-            const activeColor = isActive
-              ? noteHand === "right" ? `hsl(${settings.rightHandColor})`
-              : noteHand === "left" ? `hsl(${settings.leftHandColor})`
-              : `hsl(${settings.anyHandColor})`
-              : undefined;
+          {!showIcons ? (
+            <>
+              {positions.map(pos => {
+                const val = String(pos);
+                const noteHand = activeMap.get(val);
+                const isActive = noteHand !== undefined;
+                const isPending = pendingNote === val;
+                const activeColor = isActive
+                  ? noteHand === "right" ? `hsl(${settings.rightHandColor})`
+                  : noteHand === "left" ? `hsl(${settings.leftHandColor})`
+                  : `hsl(${settings.anyHandColor})`
+                  : undefined;
 
-            return (
-              <button
-                key={pos}
-                onClick={() => handleTap(pos)}
-                disabled={isDisabled}
-                className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg transition-colors border
-                  ${isPending
-                    ? "ring-2 ring-ring bg-accent border-ring"
-                    : isActive
-                      ? `${activeBorderColor} bg-secondary border-current`
-                      : isDisabled
-                        ? "bg-secondary/40 text-muted-foreground/40 border-border cursor-not-allowed"
-                        : "bg-secondary hover:bg-accent text-foreground border-border"
-                  }`}
-                title={pos === 0 ? "Ding" : `Field ${pos}`}
-              >
-                <RadialGlyph
-                  fields={settings.panscriptFields}
-                  active={[pos]}
-                  color={activeColor}
-                  size={24}
-                />
-              </button>
-            );
-          })}
+                return (
+                  <button
+                    key={pos}
+                    onClick={() => handleTap(val)}
+                    className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg transition-colors border
+                      ${isPending
+                        ? "ring-2 ring-ring bg-accent border-ring"
+                        : isActive
+                          ? `bg-secondary border-current`
+                          : "bg-secondary hover:bg-accent text-foreground border-border"
+                      }`}
+                    style={isActive ? { color: activeColor } : undefined}
+                    title={pos === 0 ? "Ding" : `Field ${pos}`}
+                  >
+                    <RadialGlyph
+                      fields={settings.panscriptFields}
+                      active={[pos]}
+                      color={activeColor}
+                      size={24}
+                    />
+                  </button>
+                );
+              })}
+            </>
+          ) : (
+            <>
+              {ICON_NAMES.map(name => {
+                const val = `icon:${name}`;
+                const noteHand = activeMap.get(val);
+                const isActive = noteHand !== undefined;
+                const isPending = pendingNote === val;
+                const activeColor = isActive
+                  ? noteHand === "right" ? `hsl(${settings.rightHandColor})`
+                  : noteHand === "left" ? `hsl(${settings.leftHandColor})`
+                  : `hsl(${settings.anyHandColor})`
+                  : undefined;
+
+                return (
+                  <button
+                    key={name}
+                    onClick={() => handleTap(val)}
+                    className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg transition-colors border
+                      ${isPending
+                        ? "ring-2 ring-ring bg-accent border-ring"
+                        : isActive
+                          ? "bg-secondary border-current"
+                          : "bg-secondary hover:bg-accent text-foreground border-border"
+                      }`}
+                    style={isActive ? { color: activeColor } : undefined}
+                    title={name}
+                  >
+                    <IconNote name={name} color={activeColor} size={20} />
+                  </button>
+                );
+              })}
+            </>
+          )}
           <button
             onClick={onClearAll}
             className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive font-mono text-sm transition-colors border border-border"
