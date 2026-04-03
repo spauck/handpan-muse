@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { BeatCell } from "./BeatCell";
 import type { Row } from "@/lib/composer-state";
+import { BeatCell } from "./BeatCell";
 
 interface SelectedCell {
   rowIdx: number;
@@ -21,17 +21,33 @@ interface ComposerGridProps {
 function getCountLabels(beatNumber: number, notesPerCount: number): string[] {
   const num = String(beatNumber);
   switch (notesPerCount) {
-    case 1: return [num];
-    case 2: return [num, "."];
-    case 3: return [num, "&", "."];
-    case 4: return [num, ".", "&", "."];
-    default: return [num, ...Array.from({ length: notesPerCount - 1 }, () => ".")];
+    case 1:
+      return [num];
+    case 2:
+      return [num, "."];
+    case 3:
+      return [num, "&", "."];
+    case 4:
+      return [num, ".", "&", "."];
+    default:
+      return [num, ...Array.from({ length: notesPerCount - 1 }, () => ".")];
   }
 }
 
-export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, viewMode, selectedCell, onSelectCell, onDeleteRow }: ComposerGridProps) {
+export function ComposerGrid({
+  rows,
+  beatsPerBar,
+  barsPerRow,
+  notesPerCount,
+  viewMode,
+  selectedCell,
+  onSelectCell,
+  onDeleteRow,
+}: ComposerGridProps) {
   const isSelected = (rowIdx: number, beatIdx: number) =>
-    !viewMode && selectedCell?.rowIdx === rowIdx && selectedCell?.beatIdx === beatIdx;
+    !viewMode &&
+    selectedCell?.rowIdx === rowIdx &&
+    selectedCell?.beatIdx === beatIdx;
 
   const handleSelect = (rowIdx: number, beatIdx: number) => {
     if (viewMode) return;
@@ -56,7 +72,10 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, vie
   return (
     <div className="space-y-3">
       {rows.map((row, rowIdx) => (
-        <div key={rowIdx} className="bg-card rounded-lg p-3 sm:p-4 border border-border group relative">
+        <div
+          key={rowIdx}
+          className="bg-card rounded-lg p-3 sm:p-4 border border-border group relative"
+        >
           {!viewMode && (
             <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
               {rows.length > 1 && (
@@ -70,7 +89,11 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, vie
               )}
             </div>
           )}
-          {!viewMode && <div className="text-[10px] text-muted-foreground mb-1 font-mono">Row {rowIdx + 1}</div>}
+          {!viewMode && (
+            <div className="text-[10px] text-muted-foreground mb-1 font-mono">
+              Row {rowIdx + 1}
+            </div>
+          )}
 
           {/* Count labels */}
           <div
@@ -83,14 +106,18 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, vie
             <div
               className="grid w-full"
               style={{
-                gridTemplateColumns: row.map((_b, i) => {
-                  const isBarEnd = (i + 1) % beatsPerBar === 0 && i < row.length - 1;
-                  return isBarEnd ? "1fr auto" : "1fr";
-                }).join(" "),
+                gridTemplateColumns: row
+                  .map((_b, i) => {
+                    const isBarEnd =
+                      (i + 1) % beatsPerBar === 0 && i < row.length - 1;
+                    return isBarEnd ? "1fr auto" : "1fr";
+                  })
+                  .join(" "),
               }}
             >
               {row.map((_beat, beatIdx) => {
-                const isBarEnd = (beatIdx + 1) % beatsPerBar === 0 && beatIdx < row.length - 1;
+                const isBarEnd =
+                  (beatIdx + 1) % beatsPerBar === 0 && beatIdx < row.length - 1;
                 const countGroup = Math.floor(beatIdx / notesPerCount);
                 const subIdx = beatIdx % notesPerCount;
                 const labels = getCountLabels(countGroup + 1, notesPerCount);
@@ -99,7 +126,9 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, vie
                 return (
                   <div key={beatIdx} className="contents">
                     <div className="flex items-center justify-center">
-                      <span className={`text-[9px] font-mono ${subIdx === 0 ? "text-muted-foreground font-semibold" : "text-muted-foreground/50"}`}>
+                      <span
+                        className={`text-[9px] font-mono ${subIdx === 0 ? "text-muted-foreground font-semibold" : "text-muted-foreground/50"}`}
+                      >
                         {label}
                       </span>
                     </div>
@@ -114,14 +143,18 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, vie
           <div
             className="grid w-full"
             style={{
-              gridTemplateColumns: row.map((_b, i) => {
-                const isBarEnd = (i + 1) % beatsPerBar === 0 && i < row.length - 1;
-                return isBarEnd ? "1fr auto" : "1fr";
-              }).join(" "),
+              gridTemplateColumns: row
+                .map((_b, i) => {
+                  const isBarEnd =
+                    (i + 1) % beatsPerBar === 0 && i < row.length - 1;
+                  return isBarEnd ? "1fr auto" : "1fr";
+                })
+                .join(" "),
             }}
           >
             {row.map((beat, beatIdx) => {
-              const isBarEnd = (beatIdx + 1) % beatsPerBar === 0 && beatIdx < row.length - 1;
+              const isBarEnd =
+                (beatIdx + 1) % beatsPerBar === 0 && beatIdx < row.length - 1;
               return (
                 <div key={beatIdx} className="contents">
                   <BeatCell
@@ -129,7 +162,9 @@ export function ComposerGrid({ rows, beatsPerBar, barsPerRow, notesPerCount, vie
                     isSelected={isSelected(rowIdx, beatIdx)}
                     onSelect={() => handleSelect(rowIdx, beatIdx)}
                   />
-                  {isBarEnd && <div className="w-px bg-bar-divider mx-0.5 self-stretch" />}
+                  {isBarEnd && (
+                    <div className="w-px bg-bar-divider mx-0.5 self-stretch" />
+                  )}
                 </div>
               );
             })}

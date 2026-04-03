@@ -1,8 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
+  "$schema": "https://biomejs.dev/schemas/2.4.4/schema.json",
   "linter": {
     "enabled": true,
     "rules": {
@@ -13,6 +10,14 @@
       },
       "suspicious": {
         "noExplicitAny": "off"
+      }
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
       }
     }
   },
@@ -27,7 +32,13 @@
       "semicolons": "always"
     }
   },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
   "files": {
-    "ignore": ["dist", "node_modules", "*.config.js", "*.config.ts"]
+    "ignoreUnknown": false,
+    "includes": ["**", "!**/generated", "!**/gen", "!**/dist", "!tsconfig.json"]
   }
 }

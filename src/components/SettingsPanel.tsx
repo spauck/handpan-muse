@@ -1,6 +1,12 @@
-import { useState } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Settings } from "lucide-react";
+import { useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { useSettings } from "@/lib/settings";
 
 const COLOR_PRESETS = [
@@ -19,14 +25,20 @@ const HAND_CONFIGS = [
 export function SettingsPanel() {
   const { settings, updateSettings } = useSettings();
 
-  const setColor = (hand: "rightHandColor" | "leftHandColor" | "anyHandColor", hsl: string) => {
+  const setColor = (
+    hand: "rightHandColor" | "leftHandColor" | "anyHandColor",
+    hsl: string,
+  ) => {
     updateSettings({ ...settings, [hand]: hsl });
   };
 
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors" title="Settings">
+        <button
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          title="Settings"
+        >
           <Settings className="w-4 h-4" />
         </button>
       </SheetTrigger>
@@ -38,13 +50,15 @@ export function SettingsPanel() {
         <div className="mt-6 space-y-6">
           {/* Colors */}
           <section>
-            <h3 className="text-sm font-semibold text-foreground mb-3">Hand Colors</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-3">
+              Hand Colors
+            </h3>
             <div className="space-y-3">
               {HAND_CONFIGS.map(({ key, label }) => (
                 <div key={key} className="space-y-1.5">
                   <span className="text-sm text-muted-foreground">{label}</span>
                   <div className="flex gap-1.5">
-                    {COLOR_PRESETS.map(preset => {
+                    {COLOR_PRESETS.map((preset) => {
                       const isActive = settings[key] === preset.hsl;
                       return (
                         <button
@@ -72,15 +86,26 @@ export function SettingsPanel() {
 
           {/* Tone Fields */}
           <section>
-            <h3 className="text-sm font-semibold text-foreground mb-3">Tone Fields</h3>
-            <p className="text-xs text-muted-foreground mb-2">Number of tone fields on your handpan (excluding ding)</p>
+            <h3 className="text-sm font-semibold text-foreground mb-3">
+              Tone Fields
+            </h3>
+            <p className="text-xs text-muted-foreground mb-2">
+              Number of tone fields on your handpan (excluding ding)
+            </p>
             <select
               value={settings.panscriptFields}
-              onChange={(e) => updateSettings({ ...settings, panscriptFields: parseInt(e.target.value) })}
+              onChange={(e) =>
+                updateSettings({
+                  ...settings,
+                  panscriptFields: parseInt(e.target.value),
+                })
+              }
               className="bg-secondary text-foreground rounded px-2 py-1 text-sm font-mono border border-border"
             >
-              {[7, 8, 9, 10, 11, 12].map(n => (
-                <option key={n} value={n}>{n} ({n}+1)</option>
+              {[7, 8, 9, 10, 11, 12].map((n) => (
+                <option key={n} value={n}>
+                  {n} ({n}+1)
+                </option>
               ))}
             </select>
           </section>

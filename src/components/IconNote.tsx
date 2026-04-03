@@ -1,7 +1,21 @@
 import {
-  Star, Heart, Circle, Triangle, Square, Zap, Music, Flame,
-  Droplets, Wind, Sun, Moon, CloudRain, Sparkles, Ghost, Skull,
+  Circle,
+  CloudRain,
+  Droplets,
+  Flame,
+  Ghost,
+  Heart,
   type LucideIcon,
+  Moon,
+  Music,
+  Skull,
+  Sparkles,
+  Square,
+  Star,
+  Sun,
+  Triangle,
+  Wind,
+  Zap,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -43,5 +57,7 @@ interface IconNoteProps {
 export function IconNote({ name, color, size = 16, className }: IconNoteProps) {
   const Icon = ICON_MAP[name];
   if (!Icon) return <span className={className}>?</span>;
-  return <Icon size={size} color={color} className={className} strokeWidth={2.5} />;
+  return (
+    <Icon size={size} color={color} className={className} strokeWidth={2.5} />
+  );
 }

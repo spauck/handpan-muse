@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { useSettings, handColorClass } from "@/lib/settings";
-import { RadialGlyph } from "./PanScriptGlyph";
-import { IconNote, ICON_NAMES, isIconNote, getIconName } from "./IconNote";
 import { Eraser } from "lucide-react";
+import { useState } from "react";
 import type { Hand } from "@/lib/composer-state";
+import { handColorClass, useSettings } from "@/lib/settings";
+import { getIconName, ICON_NAMES, IconNote, isIconNote } from "./IconNote";
+import { RadialGlyph } from "./PanScriptGlyph";
 
 interface SelectedCell {
   rowIdx: number;
@@ -24,16 +24,25 @@ const HAND_OPTIONS: { hand: Hand; label: string; short: string }[] = [
   { hand: "any", label: "Any", short: "A" },
 ];
 
-export function PositionKeyboard({ selectedCell, activeNotes, onAssignNote, onRemoveNote, onClearAll }: PositionKeyboardProps) {
+export function PositionKeyboard({
+  selectedCell,
+  activeNotes,
+  onAssignNote,
+  onRemoveNote,
+  onClearAll,
+}: PositionKeyboardProps) {
   const { settings } = useSettings();
   const [pendingNote, setPendingNote] = useState<string | null>(null);
   const [showIcons, setShowIcons] = useState(false);
 
   if (!selectedCell) return null;
 
-  const activeMap = new Map(activeNotes.map(n => [n.value, n.hand]));
+  const activeMap = new Map(activeNotes.map((n) => [n.value, n.hand]));
   const totalNotes = activeNotes.length;
-  const positions = [0, ...Array.from({ length: settings.panscriptFields }, (_, i) => i + 1)];
+  const positions = [
+    0,
+    ...Array.from({ length: settings.panscriptFields }, (_, i) => i + 1),
+  ];
 
   const handleTap = (val: string) => {
     setPendingNote(pendingNote === val ? null : val);
@@ -51,7 +60,9 @@ export function PositionKeyboard({ selectedCell, activeNotes, onAssignNote, onRe
     setPendingNote(null);
   };
 
-  const existingHand = pendingNote ? activeMap.get(pendingNote) ?? null : null;
+  const existingHand = pendingNote
+    ? (activeMap.get(pendingNote) ?? null)
+    : null;
   const isNewNote = pendingNote !== null && !activeMap.has(pendingNote);
 
   return (
@@ -67,9 +78,11 @@ export function PositionKeyboard({ selectedCell, activeNotes, onAssignNote, onRe
             </span>
           )}
           <button
-            onClick={() => setShowIcons(v => !v)}
+            onClick={() => setShowIcons((v) => !v)}
             className={`ml-auto text-[10px] px-2 py-0.5 rounded border transition-colors ${
-              showIcons ? "bg-accent border-ring text-foreground" : "border-border text-muted-foreground hover:text-foreground"
+              showIcons
+                ? "bg-accent border-ring text-foreground"
+                : "border-border text-muted-foreground hover:text-foreground"
             }`}
           >
             {showIcons ? "Positions" : "Icons"}
@@ -120,15 +133,17 @@ export function PositionKeyboard({ selectedCell, activeNotes, onAssignNote, onRe
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
           {!showIcons ? (
             <>
-              {positions.map(pos => {
+              {positions.map((pos) => {
                 const val = String(pos);
                 const noteHand = activeMap.get(val);
                 const isActive = noteHand !== undefined;
                 const isPending = pendingNote === val;
                 const activeColor = isActive
-                  ? noteHand === "right" ? `hsl(${settings.rightHandColor})`
-                  : noteHand === "left" ? `hsl(${settings.leftHandColor})`
-                  : `hsl(${settings.anyHandColor})`
+                  ? noteHand === "right"
+                    ? `hsl(${settings.rightHandColor})`
+                    : noteHand === "left"
+                      ? `hsl(${settings.leftHandColor})`
+                      : `hsl(${settings.anyHandColor})`
                   : undefined;
 
                 return (
@@ -136,11 +151,12 @@ export function PositionKeyboard({ selectedCell, activeNotes, onAssignNote, onRe
                     key={pos}
                     onClick={() => handleTap(val)}
                     className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg transition-colors border
-                      ${isPending
-                        ? "ring-2 ring-ring bg-accent border-ring"
-                        : isActive
-                          ? `bg-secondary border-current`
-                          : "bg-secondary hover:bg-accent text-foreground border-border"
+                      ${
+                        isPending
+                          ? "ring-2 ring-ring bg-accent border-ring"
+                          : isActive
+                            ? `bg-secondary border-current`
+                            : "bg-secondary hover:bg-accent text-foreground border-border"
                       }`}
                     style={isActive ? { color: activeColor } : undefined}
                     title={pos === 0 ? "Ding" : `Field ${pos}`}
@@ -157,15 +173,17 @@ export function PositionKeyboard({ selectedCell, activeNotes, onAssignNote, onRe
             </>
           ) : (
             <>
-              {ICON_NAMES.map(name => {
+              {ICON_NAMES.map((name) => {
                 const val = `icon:${name}`;
                 const noteHand = activeMap.get(val);
                 const isActive = noteHand !== undefined;
                 const isPending = pendingNote === val;
                 const activeColor = isActive
-                  ? noteHand === "right" ? `hsl(${settings.rightHandColor})`
-                  : noteHand === "left" ? `hsl(${settings.leftHandColor})`
-                  : `hsl(${settings.anyHandColor})`
+                  ? noteHand === "right"
+                    ? `hsl(${settings.rightHandColor})`
+                    : noteHand === "left"
+                      ? `hsl(${settings.leftHandColor})`
+                      : `hsl(${settings.anyHandColor})`
                   : undefined;
 
                 return (
@@ -173,11 +191,12 @@ export function PositionKeyboard({ selectedCell, activeNotes, onAssignNote, onRe
                     key={name}
                     onClick={() => handleTap(val)}
                     className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg transition-colors border
-                      ${isPending
-                        ? "ring-2 ring-ring bg-accent border-ring"
-                        : isActive
-                          ? "bg-secondary border-current"
-                          : "bg-secondary hover:bg-accent text-foreground border-border"
+                      ${
+                        isPending
+                          ? "ring-2 ring-ring bg-accent border-ring"
+                          : isActive
+                            ? "bg-secondary border-current"
+                            : "bg-secondary hover:bg-accent text-foreground border-border"
                       }`}
                     style={isActive ? { color: activeColor } : undefined}
                     title={name}

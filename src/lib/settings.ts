@@ -32,9 +32,18 @@ export function saveSettings(settings: Settings) {
 }
 
 export function applyColorVars(settings: Settings) {
-  document.documentElement.style.setProperty("--hand-right", settings.rightHandColor);
-  document.documentElement.style.setProperty("--hand-left", settings.leftHandColor);
-  document.documentElement.style.setProperty("--hand-any", settings.anyHandColor);
+  document.documentElement.style.setProperty(
+    "--hand-right",
+    settings.rightHandColor,
+  );
+  document.documentElement.style.setProperty(
+    "--hand-left",
+    settings.leftHandColor,
+  );
+  document.documentElement.style.setProperty(
+    "--hand-any",
+    settings.anyHandColor,
+  );
 }
 
 export function handColorClass(hand: "right" | "left" | "any"): string {

@@ -1,33 +1,33 @@
-import { useState, useCallback, useEffect } from "react";
-import { Save, FolderOpen, Trash2 } from "lucide-react";
+import { FolderOpen, Save, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { type ComposerState, encodeState } from "@/lib/composer-state";
 import {
-  listSavedCompositions,
-  saveComposition,
-  deleteComposition,
   compositionExists,
+  deleteComposition,
+  listSavedCompositions,
   type SavedComposition,
+  saveComposition,
 } from "@/lib/composition-storage";
-import { encodeState, type ComposerState } from "@/lib/composer-state";
 
 interface Props {
   state: ComposerState;
@@ -37,7 +37,13 @@ interface Props {
   onSaved: (name: string) => void;
 }
 
-export function CompositionManager({ state, loadedName, onLoad, hasUnsavedChanges, onSaved }: Props) {
+export function CompositionManager({
+  state,
+  loadedName,
+  onLoad,
+  hasUnsavedChanges,
+  onSaved,
+}: Props) {
   /* ── Save dialog ── */
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
@@ -73,21 +79,26 @@ export function CompositionManager({ state, loadedName, onLoad, hasUnsavedChange
   const [loadOpen, setLoadOpen] = useState(false);
   const [compositions, setCompositions] = useState<SavedComposition[]>([]);
   const [pendingLoad, setPendingLoad] = useState<SavedComposition | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<SavedComposition | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SavedComposition | null>(
+    null,
+  );
 
   const openLoad = useCallback(() => {
     setCompositions(listSavedCompositions());
     setLoadOpen(true);
   }, []);
 
-  const handleLoadClick = useCallback((comp: SavedComposition) => {
-    if (hasUnsavedChanges) {
-      setPendingLoad(comp);
-    } else {
-      onLoad(comp.queryString, comp.name);
-      setLoadOpen(false);
-    }
-  }, [hasUnsavedChanges, onLoad]);
+  const handleLoadClick = useCallback(
+    (comp: SavedComposition) => {
+      if (hasUnsavedChanges) {
+        setPendingLoad(comp);
+      } else {
+        onLoad(comp.queryString, comp.name);
+        setLoadOpen(false);
+      }
+    },
+    [hasUnsavedChanges, onLoad],
+  );
 
   const confirmLoad = useCallback(() => {
     if (pendingLoad) {
@@ -130,18 +141,26 @@ export function CompositionManager({ state, loadedName, onLoad, hasUnsavedChange
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Save Composition</DialogTitle>
-            <DialogDescription>Enter a name for this composition.</DialogDescription>
+            <DialogDescription>
+              Enter a name for this composition.
+            </DialogDescription>
           </DialogHeader>
           <Input
             value={saveName}
             onChange={(e) => setSaveName(e.target.value)}
             placeholder="My Composition"
-            onKeyDown={(e) => { if (e.key === "Enter") doSave(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") doSave();
+            }}
             autoFocus
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSaveOpen(false)}>Cancel</Button>
-            <Button onClick={doSave} disabled={!saveName.trim()}>Save</Button>
+            <Button variant="outline" onClick={() => setSaveOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={doSave} disabled={!saveName.trim()}>
+              Save
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -152,12 +171,15 @@ export function CompositionManager({ state, loadedName, onLoad, hasUnsavedChange
           <AlertDialogHeader>
             <AlertDialogTitle>Overwrite "{saveName.trim()}"?</AlertDialogTitle>
             <AlertDialogDescription>
-              A composition with this name already exists. Saving will replace it.
+              A composition with this name already exists. Saving will replace
+              it.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAndSave}>Overwrite</AlertDialogAction>
+            <AlertDialogAction onClick={confirmAndSave}>
+              Overwrite
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -167,10 +189,14 @@ export function CompositionManager({ state, loadedName, onLoad, hasUnsavedChange
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Load Composition</DialogTitle>
-            <DialogDescription>Select a saved composition to load.</DialogDescription>
+            <DialogDescription>
+              Select a saved composition to load.
+            </DialogDescription>
           </DialogHeader>
           {compositions.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">No saved compositions yet.</p>
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No saved compositions yet.
+            </p>
           ) : (
             <div className="max-h-60 overflow-y-auto space-y-1">
               {compositions.map((comp) => (
@@ -202,23 +228,36 @@ export function CompositionManager({ state, loadedName, onLoad, hasUnsavedChange
       </Dialog>
 
       {/* ── Confirm load over unsaved ── */}
-      <AlertDialog open={!!pendingLoad} onOpenChange={(o) => { if (!o) setPendingLoad(null); }}>
+      <AlertDialog
+        open={!!pendingLoad}
+        onOpenChange={(o) => {
+          if (!o) setPendingLoad(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
             <AlertDialogDescription>
-              You have unsaved changes. Loading a new composition will discard them.
+              You have unsaved changes. Loading a new composition will discard
+              them.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmLoad}>Load anyway</AlertDialogAction>
+            <AlertDialogAction onClick={confirmLoad}>
+              Load anyway
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* ── Confirm delete ── */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o) setDeleteTarget(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete "{deleteTarget?.name}"?</AlertDialogTitle>
@@ -228,7 +267,9 @@ export function CompositionManager({ state, loadedName, onLoad, hasUnsavedChange
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

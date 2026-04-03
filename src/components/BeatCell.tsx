@@ -1,7 +1,7 @@
+import { type Beat, beatAllNotes } from "@/lib/composer-state";
 import { useSettings } from "@/lib/settings";
+import { getIconName, IconNote, isIconNote } from "./IconNote";
 import { CompositeGlyph } from "./PanScriptGlyph";
-import { IconNote, isIconNote, getIconName } from "./IconNote";
-import { beatAllNotes, type Beat } from "@/lib/composer-state";
 
 interface UnifiedBeatCellProps {
   beat: Beat;
@@ -15,21 +15,23 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
   const isEmpty = allNotes.length === 0;
 
   const parsePositions = (notes: string[]) =>
-    notes.map(n => parseInt(n, 10)).filter(n => !isNaN(n));
+    notes.map((n) => parseInt(n, 10)).filter((n) => !isNaN(n));
 
   const rightPos = parsePositions(beat[0]);
   const leftPos = parsePositions(beat[1]);
   const anyPos = parsePositions(beat[2]);
 
   // Collect icon notes with their colors
-  const iconNotes = allNotes.filter(n => isIconNote(n.value));
+  const iconNotes = allNotes.filter((n) => isIconNote(n.value));
 
   const hasGlyphNotes = rightPos.length + leftPos.length + anyPos.length > 0;
 
   const handColor = (hand: string) =>
-    hand === "right" ? `hsl(${settings.rightHandColor})`
-    : hand === "left" ? `hsl(${settings.leftHandColor})`
-    : `hsl(${settings.anyHandColor})`;
+    hand === "right"
+      ? `hsl(${settings.rightHandColor})`
+      : hand === "left"
+        ? `hsl(${settings.leftHandColor})`
+        : `hsl(${settings.anyHandColor})`;
 
   return (
     <button
@@ -54,7 +56,10 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
             />
           )}
           {iconNotes.map((n, i) => (
-            <span key={i} className="absolute inset-0 flex items-center justify-center">
+            <span
+              key={i}
+              className="absolute inset-0 flex items-center justify-center"
+            >
               <IconNote
                 name={getIconName(n.value)}
                 color={handColor(n.hand)}

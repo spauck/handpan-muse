@@ -47,14 +47,12 @@ function decodeBeat(beatStr: string): Beat {
   if (dotIdx === -1) return [[], [], []];
   const r = beatStr.slice(0, dotIdx);
   const l = beatStr.slice(dotIdx + 1);
-  const toArr = (v: string) => (v === "" || v === ".") ? [] : [v];
+  const toArr = (v: string) => (v === "" || v === "." ? [] : [v]);
   return [toArr(r), toArr(l), []];
 }
 
 export function encodeState(state: ComposerState): string {
-  const rows = state.rows.map(row =>
-    row.map(encodeBeat).join(",")
-  ).join("|");
+  const rows = state.rows.map((row) => row.map(encodeBeat).join(",")).join("|");
   return `b=${state.beatsPerBar}&r=${state.barsPerRow}&n=${state.notesPerCount}&d=${encodeURIComponent(rows)}`;
 }
 
@@ -66,12 +64,15 @@ export function decodeState(search: string): ComposerState {
   const d = params.get("d");
 
   if (!b || !r || !d) {
-    return { ...DEFAULT_STATE, rows: [initRow(DEFAULT_STATE.beatsPerBar, DEFAULT_STATE.barsPerRow)] };
+    return {
+      ...DEFAULT_STATE,
+      rows: [initRow(DEFAULT_STATE.beatsPerBar, DEFAULT_STATE.barsPerRow)],
+    };
   }
 
-  const rows: Row[] = d.split("|").map(rowStr =>
-    rowStr.split(",").map(decodeBeat)
-  );
+  const rows: Row[] = d
+    .split("|")
+    .map((rowStr) => rowStr.split(",").map(decodeBeat));
 
   return { beatsPerBar: b, barsPerRow: r, notesPerCount: n, rows };
 }
