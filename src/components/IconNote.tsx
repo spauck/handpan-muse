@@ -3,9 +3,10 @@ import {
   CircleDashed,
   CircleDot,
   CircleSmall,
+  Dot,
   Ghost,
-  LoaderCircle,
   type LucideIcon,
+  X,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -14,7 +15,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   dash: CircleDashed,
   ding: CircleSmall,
   ding2: CircleDot,
-  crescent: LoaderCircle,
+  dot: Dot,
+  x: X,
 };
 
 export const ICON_NAMES = Object.keys(ICON_MAP);
@@ -38,6 +40,6 @@ export function IconNote({ name, color, size = 16, className }: IconNoteProps) {
   const Icon = ICON_MAP[name];
   if (!Icon) return <span className={className}>?</span>;
   return (
-    <Icon size={size} color={color} className={className} strokeWidth={2.5} />
+    <Icon size={size} color={color} className={className} strokeWidth={2} />
   );
 }

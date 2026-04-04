@@ -116,7 +116,7 @@ export function ComposerGrid({
                   <div key={beatIdx} className="contents">
                     <div className="flex items-center justify-center">
                       <span
-                        className={`text-[9px] font-mono ${subIdx === 0 ? "text-muted-foreground font-semibold" : "text-muted-foreground/50"}`}
+                        className={`text-[12px] font-mono ${subIdx === 0 ? "text-muted-foreground font-semibold" : "text-muted-foreground/50"}`}
                       >
                         {label}
                       </span>

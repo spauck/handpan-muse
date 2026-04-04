@@ -1,7 +1,11 @@
-import { type Beat, beatAllNotes } from "@/lib/composer-state";
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
+
+import { Dot } from "lucide-react";
+import { type Beat, beatAllNotes, type Hand } from "@/lib/composer-state";
+import type { Settings } from "@/lib/settings";
 import { useSettings } from "@/lib/settings";
 import { getIconName, IconNote, isIconNote } from "./IconNote";
-import { CompositeGlyph } from "./PanScriptGlyph";
+import { RadialGlyph } from "./PanScriptGlyph";
 
 interface UnifiedBeatCellProps {
   beat: Beat;
@@ -14,63 +18,66 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
   const allNotes = beatAllNotes(beat);
   const isEmpty = allNotes.length === 0;
 
-  const parsePositions = (notes: string[]) =>
-    notes.map((n) => parseInt(n, 10)).filter((n) => !Number.isNaN(n));
-
-  const rightPos = parsePositions(beat[0]);
-  const leftPos = parsePositions(beat[1]);
-  const anyPos = parsePositions(beat[2]);
-
-  // Collect icon notes with their colors
-  const iconNotes = allNotes.filter((n) => isIconNote(n.value));
-
-  const hasGlyphNotes = rightPos.length + leftPos.length + anyPos.length > 0;
-
-  const handColor = (hand: string) =>
-    hand === "right"
-      ? `hsl(${settings.rightHandColor})`
-      : hand === "left"
-        ? `hsl(${settings.leftHandColor})`
-        : `hsl(${settings.anyHandColor})`;
-
   return (
     <button
       type="button"
       className={`aspect-[7/9] w-full flex items-center justify-center rounded transition-all relative
         ${isSelected ? "ring-2 ring-ring bg-accent scale-110" : "hover:bg-secondary"}
         ${isEmpty ? "text-beat-empty" : ""}
-        cursor-pointer select-none p-0.5`}
+        cursor-pointer select-none p-0`}
       onClick={onSelect}
     >
       {isEmpty ? (
-        <span className="text-[0.6em]">·</span>
+        <span className="absolute inset-0 flex items-center justify-center">
+          <Dot />
+        </span>
       ) : (
-        <>
-          {hasGlyphNotes && (
-            <CompositeGlyph
-              fields={settings.panscriptFields}
-              rightActive={[...rightPos, ...anyPos]}
-              leftActive={[...leftPos, ...anyPos]}
-              rightColor={`hsl(${settings.rightHandColor})`}
-              leftColor={`hsl(${settings.leftHandColor})`}
-              fluid
-            />
-          )}
-          {iconNotes.map((n, i) => (
+        allNotes.map((n, i) => {
+          return (
             <span
-              // biome-ignore lint/suspicious/noArrayIndexKey: because
               key={i}
               className="absolute inset-0 flex items-center justify-center"
             >
-              <IconNote
-                name={getIconName(n.value)}
-                color={handColor(n.hand)}
-                size="60%"
-              />
+              <NoteGlyph key={i} note={n} settings={settings} />
             </span>
-          ))}
-        </>
+          );
+        })
       )}
     </button>
   );
 }
+
+const handColor = (settings: Settings, hand: "right" | "left" | "any") => {
+  return `hsl(${settings[`${hand}HandColor`]})`;
+};
+
+const NoteGlyph = ({
+  note,
+  settings,
+}: {
+  note: { value: string; hand: Hand };
+  settings: Settings;
+}) => {
+  if (isIconNote(note.value)) {
+    return (
+      <IconNote
+        name={getIconName(note.value)}
+        color={handColor(settings, note.hand)}
+        size="80%"
+      />
+    );
+  }
+  const pos = parseInt(note.value, 10);
+  if (Number.isNaN(pos)) return null;
+
+  return (
+    <RadialGlyph
+      fluid
+      className="absolute inset-0 flex items-center justify-center"
+      fields={settings.panscriptFields}
+      active={[pos]}
+      color={handColor(settings, note.hand)}
+      size={94}
+    />
+  );
+};

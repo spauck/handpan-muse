@@ -208,7 +208,7 @@ const Index = () => {
       <div
         className={`min-h-screen bg-background p-3 sm:p-6 ${selectedCell && !viewMode ? "pb-28" : ""}`}
       >
-        <div className="max-w-3xl mx-auto">
+        <div className="mx-auto">
           {/* Header */}
           <div className="mb-6 flex items-start justify-between">
             <div>
