@@ -74,7 +74,7 @@ const NoteGlyph = ({
     <RadialGlyph
       fluid
       className="absolute inset-0 flex items-center justify-center"
-      fields={settings.panscriptFields}
+      settings={settings}
       active={[pos]}
       color={handColor(settings, note.hand)}
       size={94}

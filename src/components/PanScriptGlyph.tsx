@@ -5,14 +5,17 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
 /** biome-ignore-all lint/a11y/noSvgWithoutTitle: because */
 
+import type { Settings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 
-function getFieldAngle(index: number, total: number): number {
-  return -Math.PI / 2 + (2 * Math.PI * (index - 1)) / total;
+function getFieldAngle(index: number, total: number, offset: number): number {
+  const side = index % 2 ? -1 : 1;
+  const increment = Math.floor(index / 2);
+  return Math.PI / 2 + (2 * Math.PI * (increment * side + offset)) / total;
 }
 
 interface RadialGlyphProps {
-  fields: number;
+  settings: Settings;
   active: number[];
   color?: string;
   size?: number;
@@ -22,7 +25,7 @@ interface RadialGlyphProps {
 
 /** Single-hand radial glyph */
 export function RadialGlyph({
-  fields,
+  settings,
   active,
   color,
   size = 28,
@@ -48,16 +51,22 @@ export function RadialGlyph({
         <circle cx={cx} cy={cy} r={5} fill={color || "currentColor"} />
       )}
       {/* Tone field lines */}
-      {Array.from({ length: fields }, (_, i) => {
-        if (!activeSet.has(i + 1)) return null;
-        const angle = getFieldAngle(i + 1, fields);
+      {Array.from(activeSet).map((pos) => {
+        if (pos === 0) return null;
+        if (pos > settings.panscriptFields) return null;
+
+        const angle = getFieldAngle(
+          pos,
+          settings.panscriptFields,
+          settings.panscriptFieldOffset,
+        );
         const x1 = cx + innerR * Math.cos(angle);
         const y1 = cy + innerR * Math.sin(angle);
         const x2 = cx + outerR * Math.cos(angle);
         const y2 = cy + outerR * Math.sin(angle);
         return (
           <line
-            key={i}
+            key={pos}
             x1={x1}
             y1={y1}
             x2={x2}

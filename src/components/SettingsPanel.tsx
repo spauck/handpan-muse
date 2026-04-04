@@ -93,22 +93,41 @@ export function SettingsPanel() {
             <p className="text-xs text-muted-foreground mb-2">
               Number of tone fields on your handpan (excluding ding)
             </p>
-            <select
-              value={settings.panscriptFields}
-              onChange={(e) =>
-                updateSettings({
-                  ...settings,
-                  panscriptFields: parseInt(e.target.value, 10),
-                })
-              }
-              className="bg-secondary text-foreground rounded px-2 py-1 text-sm font-mono border border-border"
-            >
-              {[7, 8, 9, 10, 11, 12].map((n) => (
-                <option key={n} value={n}>
-                  {n} ({n}+1)
+            <div className="flex flex-row gap-4">
+              <select
+                value={settings.panscriptFields}
+                onChange={(e) =>
+                  updateSettings({
+                    ...settings,
+                    panscriptFields: parseInt(e.target.value, 10),
+                  })
+                }
+                className="bg-secondary text-foreground rounded px-2 py-1 text-sm font-mono border border-border"
+              >
+                {[7, 8, 9, 10, 11, 12].map((n) => (
+                  <option key={n} value={n}>
+                    {n} ({n}+1)
+                  </option>
+                ))}
+              </select>
+              <select
+                value={settings.panscriptFieldOffset}
+                onChange={(e) =>
+                  updateSettings({
+                    ...settings,
+                    panscriptFieldOffset: parseFloat(e.target.value),
+                  })
+                }
+                className="bg-secondary text-foreground rounded px-2 py-1 text-sm font-mono border border-border"
+              >
+                <option key="centre" value={0}>
+                  Centre
                 </option>
-              ))}
-            </select>
+                <option key="offset" value={-0.5}>
+                  Offset
+                </option>
+              </select>
+            </div>
           </section>
         </div>
       </SheetContent>

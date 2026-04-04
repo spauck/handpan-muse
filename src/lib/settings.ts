@@ -5,6 +5,7 @@ export interface Settings {
   leftHandColor: string;
   anyHandColor: string;
   panscriptFields: number;
+  panscriptFieldOffset: number;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -12,6 +13,7 @@ const DEFAULT_SETTINGS: Settings = {
   leftHandColor: "0 70% 58%",
   anyHandColor: "140 60% 45%",
   panscriptFields: 8,
+  panscriptFieldOffset: 0,
 };
 
 const STORAGE_KEY = "handpan-settings";

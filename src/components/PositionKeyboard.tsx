@@ -155,7 +155,7 @@ export function PositionKeyboard({
                     title={pos === 0 ? "Ding" : `Field ${pos}`}
                   >
                     <RadialGlyph
-                      fields={settings.panscriptFields}
+                      settings={settings}
                       active={[pos]}
                       color={activeColor}
                       size={24}
