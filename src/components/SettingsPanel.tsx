@@ -1,5 +1,4 @@
 import { Settings } from "lucide-react";
-import { useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -36,6 +35,7 @@ export function SettingsPanel() {
     <Sheet>
       <SheetTrigger asChild>
         <button
+          type="button"
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           title="Settings"
         >
@@ -63,6 +63,7 @@ export function SettingsPanel() {
                       return (
                         <button
                           key={preset.label}
+                          type="button"
                           onClick={() => setColor(key, preset.hsl)}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs border transition-colors ${
                             isActive
@@ -97,7 +98,7 @@ export function SettingsPanel() {
               onChange={(e) =>
                 updateSettings({
                   ...settings,
-                  panscriptFields: parseInt(e.target.value),
+                  panscriptFields: parseInt(e.target.value, 10),
                 })
               }
               className="bg-secondary text-foreground rounded px-2 py-1 text-sm font-mono border border-border"

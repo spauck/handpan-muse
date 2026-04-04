@@ -5,7 +5,6 @@
     "rules": {
       "recommended": true,
       "correctness": {
-        "noUnusedVariables": "off",
         "noUnusedImports": "warn"
       },
       "suspicious": {

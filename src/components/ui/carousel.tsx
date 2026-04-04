@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/a11y/useSemanticElements: because */
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from "embla-carousel-react";

@@ -1,3 +1,5 @@
+/** biome-ignore-all lint/suspicious/noUnknownAtRules: because */
+/** biome-ignore-all lint/correctness/noInvalidPositionAtImportRule: because */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

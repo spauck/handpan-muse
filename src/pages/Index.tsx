@@ -242,6 +242,7 @@ const Index = () => {
                 />
               )}
               <button
+                type="button"
                 className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border ${
                   viewMode
                     ? "bg-primary text-primary-foreground border-primary"
@@ -269,7 +270,10 @@ const Index = () => {
                 <select
                   value={state.beatsPerBar}
                   onChange={(e) =>
-                    handleConfigChange("beatsPerBar", parseInt(e.target.value))
+                    handleConfigChange(
+                      "beatsPerBar",
+                      parseInt(e.target.value, 10),
+                    )
                   }
                   className="bg-secondary text-foreground rounded px-2 py-1 text-sm font-mono border border-border"
                 >
@@ -285,7 +289,10 @@ const Index = () => {
                 <select
                   value={state.barsPerRow}
                   onChange={(e) =>
-                    handleConfigChange("barsPerRow", parseInt(e.target.value))
+                    handleConfigChange(
+                      "barsPerRow",
+                      parseInt(e.target.value, 10),
+                    )
                   }
                   className="bg-secondary text-foreground rounded px-2 py-1 text-sm font-mono border border-border"
                 >
@@ -303,7 +310,7 @@ const Index = () => {
                   onChange={(e) =>
                     handleConfigChange(
                       "notesPerCount",
-                      parseInt(e.target.value),
+                      parseInt(e.target.value, 10),
                     )
                   }
                   className="bg-secondary text-foreground rounded px-2 py-1 text-sm font-mono border border-border"
@@ -316,6 +323,7 @@ const Index = () => {
                 </select>
               </label>
               <button
+                type="button"
                 onClick={reset}
                 className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 title="Reset composition"
@@ -330,7 +338,6 @@ const Index = () => {
           <ComposerGrid
             rows={state.rows}
             beatsPerBar={state.beatsPerBar}
-            barsPerRow={state.barsPerRow}
             notesPerCount={state.notesPerCount}
             viewMode={viewMode}
             selectedCell={selectedCell}
@@ -340,6 +347,7 @@ const Index = () => {
 
           {!viewMode && (
             <button
+              type="button"
               onClick={addRow}
               className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors text-sm"
             >

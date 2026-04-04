@@ -2,6 +2,8 @@
  * Simplified PanScript glyph: radial lines from center.
  * Position 0 = ding (center dot), 1..N = tone fields as short radial lines.
  */
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
+/** biome-ignore-all lint/a11y/noSvgWithoutTitle: because */
 
 function getFieldAngle(index: number, total: number): number {
   return -Math.PI / 2 + (2 * Math.PI * (index - 1)) / total;
@@ -57,7 +59,7 @@ export function RadialGlyph({
             x2={x2}
             y2={y2}
             stroke={color || "currentColor"}
-            strokeWidth={6}
+            strokeWidth={8}
             strokeLinecap="round"
           />
         );

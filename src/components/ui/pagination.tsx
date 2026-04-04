@@ -4,7 +4,9 @@ import { type ButtonProps, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
+  // biome-ignore lint/a11y/useSemanticElements: because
   <nav
+    // biome-ignore lint/a11y/noRedundantRoles: because
     role="navigation"
     aria-label="pagination"
     className={cn("mx-auto flex w-full justify-center", className)}

@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
+
 import type { Row } from "@/lib/composer-state";
 import { BeatCell } from "./BeatCell";
 
@@ -10,7 +11,6 @@ interface SelectedCell {
 interface ComposerGridProps {
   rows: Row[];
   beatsPerBar: number;
-  barsPerRow: number;
   notesPerCount: number;
   viewMode?: boolean;
   selectedCell: SelectedCell | null;
@@ -37,7 +37,6 @@ function getCountLabels(beatNumber: number, notesPerCount: number): string[] {
 export function ComposerGrid({
   rows,
   beatsPerBar,
-  barsPerRow,
   notesPerCount,
   viewMode,
   selectedCell,
@@ -58,17 +57,6 @@ export function ComposerGrid({
     }
   };
 
-  // Count bar dividers per row to account for their space
-  const barDividers = useMemo(() => {
-    if (rows.length === 0) return 0;
-    const len = rows[0].length;
-    let count = 0;
-    for (let i = 1; i < len; i++) {
-      if (i % beatsPerBar === 0) count++;
-    }
-    return count;
-  }, [rows, beatsPerBar]);
-
   return (
     <div className="space-y-3">
       {rows.map((row, rowIdx) => (
@@ -80,6 +68,7 @@ export function ComposerGrid({
             <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
               {rows.length > 1 && (
                 <button
+                  type="button"
                   onClick={() => onDeleteRow(rowIdx)}
                   className="text-muted-foreground hover:text-destructive text-xs px-1.5 py-0.5 rounded hover:bg-secondary"
                   title="Delete row"

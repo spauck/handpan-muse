@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/security/noDangerouslySetInnerHtml: because */
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
 

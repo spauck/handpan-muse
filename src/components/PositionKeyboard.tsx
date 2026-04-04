@@ -2,7 +2,7 @@ import { Eraser } from "lucide-react";
 import { useState } from "react";
 import type { Hand } from "@/lib/composer-state";
 import { handColorClass, useSettings } from "@/lib/settings";
-import { getIconName, ICON_NAMES, IconNote, isIconNote } from "./IconNote";
+import { ICON_NAMES, IconNote } from "./IconNote";
 import { RadialGlyph } from "./PanScriptGlyph";
 
 interface SelectedCell {
@@ -78,6 +78,7 @@ export function PositionKeyboard({
             </span>
           )}
           <button
+            type="button"
             onClick={() => setShowIcons((v) => !v)}
             className={`ml-auto text-[10px] px-2 py-0.5 rounded border transition-colors ${
               showIcons
@@ -100,6 +101,7 @@ export function PositionKeyboard({
               const colorCls = handColorClass(hand);
               return (
                 <button
+                  type="button"
                   key={hand}
                   onClick={() => handleHandPick(hand)}
                   className={`px-3 py-1 rounded text-xs font-semibold transition-colors border ${
@@ -114,6 +116,7 @@ export function PositionKeyboard({
             })}
             {!isNewNote && (
               <button
+                type="button"
                 onClick={handleRemove}
                 className="px-3 py-1 rounded text-xs font-semibold transition-colors border border-border text-destructive hover:bg-destructive/20"
               >
@@ -121,6 +124,7 @@ export function PositionKeyboard({
               </button>
             )}
             <button
+              type="button"
               onClick={() => setPendingNote(null)}
               className="ml-auto text-[10px] text-muted-foreground hover:text-foreground"
             >
@@ -131,9 +135,8 @@ export function PositionKeyboard({
 
         {/* Note buttons */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          {!showIcons ? (
-            <>
-              {positions.map((pos) => {
+          {!showIcons
+            ? positions.map((pos) => {
                 const val = String(pos);
                 const noteHand = activeMap.get(val);
                 const isActive = noteHand !== undefined;
@@ -148,6 +151,7 @@ export function PositionKeyboard({
 
                 return (
                   <button
+                    type="button"
                     key={pos}
                     onClick={() => handleTap(val)}
                     className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg transition-colors border
@@ -169,11 +173,8 @@ export function PositionKeyboard({
                     />
                   </button>
                 );
-              })}
-            </>
-          ) : (
-            <>
-              {ICON_NAMES.map((name) => {
+              })
+            : ICON_NAMES.map((name) => {
                 const val = `icon:${name}`;
                 const noteHand = activeMap.get(val);
                 const isActive = noteHand !== undefined;
@@ -188,6 +189,7 @@ export function PositionKeyboard({
 
                 return (
                   <button
+                    type="button"
                     key={name}
                     onClick={() => handleTap(val)}
                     className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg transition-colors border
@@ -205,9 +207,8 @@ export function PositionKeyboard({
                   </button>
                 );
               })}
-            </>
-          )}
           <button
+            type="button"
             onClick={onClearAll}
             className="shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive font-mono text-sm transition-colors border border-border"
             title="Clear all notes"

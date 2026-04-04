@@ -15,7 +15,7 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
   const isEmpty = allNotes.length === 0;
 
   const parsePositions = (notes: string[]) =>
-    notes.map((n) => parseInt(n, 10)).filter((n) => !isNaN(n));
+    notes.map((n) => parseInt(n, 10)).filter((n) => !Number.isNaN(n));
 
   const rightPos = parsePositions(beat[0]);
   const leftPos = parsePositions(beat[1]);
@@ -35,6 +35,7 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
 
   return (
     <button
+      type="button"
       className={`aspect-[7/9] w-full flex items-center justify-center rounded transition-all relative
         ${isSelected ? "ring-2 ring-ring bg-accent scale-110" : "hover:bg-secondary"}
         ${isEmpty ? "text-beat-empty" : ""}
@@ -57,6 +58,7 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
           )}
           {iconNotes.map((n, i) => (
             <span
+              // biome-ignore lint/suspicious/noArrayIndexKey: because
               key={i}
               className="absolute inset-0 flex items-center justify-center"
             >

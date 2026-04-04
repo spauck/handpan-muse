@@ -1,5 +1,5 @@
 import { FolderOpen, Save, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -120,6 +120,7 @@ export function CompositionManager({
     <>
       {/* Toolbar buttons */}
       <button
+        type="button"
         onClick={openSave}
         className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
         title="Save composition"
@@ -128,6 +129,7 @@ export function CompositionManager({
         Save
       </button>
       <button
+        type="button"
         onClick={openLoad}
         className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
         title="Load composition"
@@ -205,6 +207,7 @@ export function CompositionManager({
                   className="flex items-center justify-between px-3 py-2 rounded hover:bg-accent/50 transition-colors group"
                 >
                   <button
+                    type="button"
                     className="flex-1 text-left text-sm text-foreground"
                     onClick={() => handleLoadClick(comp)}
                   >
@@ -214,6 +217,7 @@ export function CompositionManager({
                     </span>
                   </button>
                   <button
+                    type="button"
                     onClick={() => setDeleteTarget(comp)}
                     className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity p-1"
                     title="Delete"

@@ -58,9 +58,9 @@ export function encodeState(state: ComposerState): string {
 
 export function decodeState(search: string): ComposerState {
   const params = new URLSearchParams(search);
-  const b = parseInt(params.get("b") || "");
-  const r = parseInt(params.get("r") || "");
-  const n = parseInt(params.get("n") || "1") || 1;
+  const b = parseInt(params.get("b") || "", 10);
+  const r = parseInt(params.get("r") || "", 10);
+  const n = parseInt(params.get("n") || "1", 10) || 1;
   const d = params.get("d");
 
   if (!b || !r || !d) {
