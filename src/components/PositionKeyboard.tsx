@@ -45,18 +45,16 @@ export function PositionKeyboard({
   ];
 
   const handleTap = (val: string) => {
-    setPendingNote(pendingNote === val ? null : val);
+    if (activeMap.has(val)) {
+      onRemoveNote(val);
+    } else {
+      setPendingNote(pendingNote === val ? null : val);
+    }
   };
 
   const handleHandPick = (hand: Hand) => {
     if (!pendingNote) return;
     onAssignNote(pendingNote, hand);
-    setPendingNote(null);
-  };
-
-  const handleRemove = () => {
-    if (!pendingNote) return;
-    onRemoveNote(pendingNote);
     setPendingNote(null);
   };
 
@@ -114,15 +112,6 @@ export function PositionKeyboard({
                 </button>
               );
             })}
-            {!isNewNote && (
-              <button
-                type="button"
-                onClick={handleRemove}
-                className="px-3 py-1 rounded text-xs font-semibold transition-colors border border-border text-destructive hover:bg-destructive/20"
-              >
-                ✕ Remove
-              </button>
-            )}
             <button
               type="button"
               onClick={() => setPendingNote(null)}
