@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
 
-import { Dot } from "lucide-react";
+import { Circle, Dot } from "lucide-react";
 import { type Beat, beatAllNotes, type Hand } from "@/lib/composer-state";
 import type { Settings } from "@/lib/settings";
 import { useSettings } from "@/lib/settings";
@@ -32,16 +32,21 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
           <Dot />
         </span>
       ) : (
-        allNotes.map((n, i) => {
-          return (
-            <span
-              key={i}
-              className="absolute inset-0 flex items-center justify-center"
-            >
-              <NoteGlyph key={i} note={n} settings={settings} />
-            </span>
-          );
-        })
+        <>
+          <span className="absolute inset-0 flex items-center justify-center">
+            <Circle className="text-beat-empty" size={58} strokeWidth={1} />
+          </span>
+          {allNotes.map((n, i) => {
+            return (
+              <span
+                key={i}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <NoteGlyph key={i} note={n} settings={settings} />
+              </span>
+            );
+          })}
+        </>
       )}
     </button>
   );
