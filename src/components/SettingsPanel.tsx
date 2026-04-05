@@ -1,4 +1,4 @@
-import { Settings } from "lucide-react";
+import { Moon, Settings, Sun } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -7,12 +7,14 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useSettings } from "@/lib/settings";
+import { type Theme, applyTheme, loadTheme } from "@/lib/theme";
+import { useState } from "react";
 
 const COLOR_PRESETS = [
   { label: "Red", hsl: "0 70% 58%" },
   { label: "Green", hsl: "140 60% 45%" },
   { label: "Blue", hsl: "210 80% 60%" },
-  { label: "Neutral", hsl: "220 10% 55%" },
+  { label: "Neutral", hslDark: "220 10% 55%", hslLight: "220 15% 40%" },
 ] as const;
 
 const HAND_CONFIGS = [
@@ -23,6 +25,18 @@ const HAND_CONFIGS = [
 
 export function SettingsPanel() {
   const { settings, updateSettings } = useSettings();
+  const [theme, setTheme] = useState<Theme>(loadTheme);
+
+  const isDark = theme === "dark";
+
+  const toggleTheme = () => {
+    const next = isDark ? "light" : "dark";
+    applyTheme(next);
+    setTheme(next);
+  };
+
+  const getPresetHsl = (preset: (typeof COLOR_PRESETS)[number]) =>
+    "hsl" in preset ? preset.hsl : isDark ? preset.hslDark : preset.hslLight;
 
   const setColor = (
     hand: "rightHandColor" | "leftHandColor" | "anyHandColor",
@@ -48,6 +62,25 @@ export function SettingsPanel() {
         </SheetHeader>
 
         <div className="mt-6 space-y-6">
+          {/* Theme */}
+          <section>
+            <h3 className="text-sm font-semibold text-foreground mb-3">
+              Theme
+            </h3>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex items-center gap-2 px-3 py-2 rounded border border-border text-sm text-foreground hover:border-ring/50 transition-colors"
+            >
+              {isDark ? (
+                <Sun className="w-4 h-4" />
+              ) : (
+                <Moon className="w-4 h-4" />
+              )}
+              {isDark ? "Switch to Light" : "Switch to Dark"}
+            </button>
+          </section>
+
           {/* Colors */}
           <section>
             <h3 className="text-sm font-semibold text-foreground mb-3">
@@ -59,12 +92,13 @@ export function SettingsPanel() {
                   <span className="text-sm text-muted-foreground">{label}</span>
                   <div className="flex gap-1.5">
                     {COLOR_PRESETS.map((preset) => {
-                      const isActive = settings[key] === preset.hsl;
+                      const hsl = getPresetHsl(preset);
+                      const isActive = settings[key] === hsl;
                       return (
                         <button
                           key={preset.label}
                           type="button"
-                          onClick={() => setColor(key, preset.hsl)}
+                          onClick={() => setColor(key, hsl)}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs border transition-colors ${
                             isActive
                               ? "border-ring bg-accent text-foreground font-semibold"
@@ -73,7 +107,7 @@ export function SettingsPanel() {
                         >
                           <span
                             className="w-3 h-3 rounded-full shrink-0"
-                            style={{ backgroundColor: `hsl(${preset.hsl})` }}
+                            style={{ backgroundColor: `hsl(${hsl})` }}
                           />
                           {preset.label}
                         </button>

@@ -2,6 +2,7 @@ import { Eye, Pencil, Plus, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ComposerGrid } from "@/components/ComposerGrid";
+import { applyTheme, loadTheme } from "@/lib/theme";
 import { CompositionManager } from "@/components/CompositionManager";
 import { PositionKeyboard } from "@/components/PositionKeyboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
@@ -65,6 +66,7 @@ const Index = () => {
   );
 
   useEffect(() => {
+    applyTheme(loadTheme());
     applyColorVars(settings);
   }, [settings]);
 
