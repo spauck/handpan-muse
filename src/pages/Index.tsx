@@ -66,6 +66,7 @@ const Index = () => {
   );
 
   useEffect(() => {
+    applyTheme(loadTheme());
     applyColorVars(settings);
   }, [settings]);
 
