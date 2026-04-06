@@ -364,6 +364,7 @@ const Index = () => {
         <PositionKeyboard
           selectedCell={selectedCell}
           activeNotes={activeNotes}
+          rows={state.rows}
           onAssignNote={handleAssignNote}
           onRemoveNote={handleRemoveNote}
           onClearAll={handleClearAll}
