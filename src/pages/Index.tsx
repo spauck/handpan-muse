@@ -154,6 +154,24 @@ const Index = () => {
     updateState({ ...state, rows: newRows });
   }, [selectedCell, state, updateState]);
 
+  const handleSetBeat = useCallback(
+    (beat: Beat) => {
+      if (!selectedCell) return;
+      const { rowIdx, beatIdx } = selectedCell;
+      const totalBeats = state.beatsPerBar * state.barsPerRow;
+      const newRows = state.rows.map((row, ri): Beat[] => {
+        if (ri !== rowIdx) return row;
+        return row.map((b, bi): Beat => (bi !== beatIdx ? b : beat));
+      });
+      const wasEmpty = activeNotes.length === 0;
+      updateState({ ...state, rows: newRows });
+      if (wasEmpty && beatIdx + 1 < totalBeats) {
+        setSelectedCell({ rowIdx, beatIdx: beatIdx + 1 });
+      }
+    },
+    [selectedCell, state, updateState, activeNotes],
+  );
+
   const addRow = useCallback(() => {
     updateState({
       ...state,
