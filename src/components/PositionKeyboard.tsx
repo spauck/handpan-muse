@@ -101,14 +101,12 @@ export function PositionKeyboard({
   };
 
   const handleChordTap = (chord: Chord) => {
-    // Clear current beat then assign all chord notes
-    onClearAll();
-    // Use setTimeout to ensure clear happens first
-    setTimeout(() => {
-      for (const n of chord.notes) {
-        onAssignNote(n.value, n.hand);
-      }
-    }, 0);
+    const beat: Beat = [[], [], []];
+    for (const n of chord.notes) {
+      const hi = handIndex(n.hand);
+      beat[hi] = [...beat[hi], n.value];
+    }
+    onSetBeat(beat);
   };
 
   const existingHand = pendingNote
