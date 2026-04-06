@@ -80,3 +80,70 @@ export function RadialGlyph({
     </svg>
   );
 }
+
+interface CompositeEntry {
+  position: number;
+  color: string;
+}
+
+interface CompositeGlyphProps {
+  settings: Settings;
+  entries: CompositeEntry[];
+  size?: number;
+  fluid?: boolean;
+  className?: string;
+}
+
+/** Multi-hand composite glyph: each position can have its own color */
+export function CompositeGlyph({
+  settings,
+  entries,
+  size = 28,
+  fluid,
+  className,
+}: CompositeGlyphProps) {
+  const cx = 50,
+    cy = 50;
+  const innerR = 24;
+  const outerR = 44;
+
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      {...(fluid
+        ? { width: "100%", height: "100%" }
+        : { width: size, height: size })}
+      className={cn("shrink-0", className)}
+    >
+      {entries.map((entry, i) => {
+        if (entry.position === 0) {
+          return (
+            <circle key={i} cx={cx} cy={cy} r={5} fill={entry.color} />
+          );
+        }
+        if (entry.position > settings.panscriptFields) return null;
+        const angle = getFieldAngle(
+          entry.position,
+          settings.panscriptFields,
+          settings.panscriptFieldOffset,
+        );
+        const x1 = cx + innerR * Math.cos(angle);
+        const y1 = cy + innerR * Math.sin(angle);
+        const x2 = cx + outerR * Math.cos(angle);
+        const y2 = cy + outerR * Math.sin(angle);
+        return (
+          <line
+            key={i}
+            x1={x1}
+            y1={y1}
+            x2={x2}
+            y2={y2}
+            stroke={entry.color}
+            strokeWidth={7}
+            strokeLinecap="round"
+          />
+        );
+      })}
+    </svg>
+  );
+}
