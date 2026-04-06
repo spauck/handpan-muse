@@ -386,6 +386,7 @@ const Index = () => {
           onAssignNote={handleAssignNote}
           onRemoveNote={handleRemoveNote}
           onClearAll={handleClearAll}
+          onSetBeat={handleSetBeat}
         />
       )}
     </SettingsContext.Provider>
