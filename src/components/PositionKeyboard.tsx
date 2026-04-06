@@ -23,6 +23,7 @@ interface PositionKeyboardProps {
   onAssignNote: (value: string, hand: Hand) => void;
   onRemoveNote: (value: string) => void;
   onClearAll: () => void;
+  onSetBeat: (beat: Beat) => void;
 }
 
 const HAND_OPTIONS: { hand: Hand; label: string; short: string }[] = [
