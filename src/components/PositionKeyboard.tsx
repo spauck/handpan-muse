@@ -69,6 +69,7 @@ export function PositionKeyboard({
   onAssignNote,
   onRemoveNote,
   onClearAll,
+  onSetBeat,
 }: PositionKeyboardProps) {
   const { settings } = useSettings();
   const [pendingNote, setPendingNote] = useState<string | null>(null);
