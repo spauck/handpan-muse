@@ -307,13 +307,33 @@ const Index = () => {
             </div>
             <div className="flex items-center gap-2 flex-wrap justify-end">
               {!viewMode && (
-                <CompositionManager
-                  state={state}
-                  loadedName={loadedName}
-                  onLoad={handleLoad}
-                  hasUnsavedChanges={hasUnsavedChanges}
-                  onSaved={handleSaved}
-                />
+                <>
+                  <button
+                    type="button"
+                    onClick={startFresh}
+                    className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
+                    title="Start a new composition"
+                  >
+                    <FilePlus className="w-3.5 h-3.5" />
+                    New
+                  </button>
+                  <button
+                    type="button"
+                    onClick={shareUrl}
+                    className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
+                    title="Copy shareable link"
+                  >
+                    <Link className="w-3.5 h-3.5" />
+                    Share
+                  </button>
+                  <CompositionManager
+                    state={state}
+                    loadedName={loadedName}
+                    onLoad={handleLoad}
+                    hasUnsavedChanges={hasUnsavedChanges}
+                    onSaved={handleSaved}
+                  />
+                </>
               )}
               <button
                 type="button"
