@@ -1,5 +1,6 @@
-import { Eye, Pencil, Plus, RotateCcw } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Eye, FilePlus, Link, Pencil, Plus, RotateCcw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
 import { ComposerGrid } from "@/components/ComposerGrid";
 import { applyTheme, loadTheme } from "@/lib/theme";
@@ -29,8 +30,32 @@ interface SelectedCell {
   beatIdx: number;
 }
 
+const AUTOSAVE_KEY = "handpan-composer-autosave";
+const AUTOSAVE_INTERVAL = 3000;
+
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // On first load, restore from autosave if URL has no composition
+  const initialQuery = useMemo(() => {
+    const urlQuery = window.location.search.slice(1);
+    if (urlQuery) return urlQuery;
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      if (saved) return saved;
+    } catch {}
+    return "";
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const hasRestoredRef = useRef(false);
+  useEffect(() => {
+    if (!hasRestoredRef.current && initialQuery && !searchParams.toString()) {
+      hasRestoredRef.current = true;
+      setSearchParams(initialQuery, { replace: true });
+    }
+  }, [initialQuery, searchParams, setSearchParams]);
+
   const state = useMemo(
     () => decodeState(searchParams.toString()),
     [searchParams],
@@ -40,6 +65,19 @@ const Index = () => {
   const [viewMode, setViewMode] = useState(false);
   const [loadedName, setLoadedName] = useState<string | null>(null);
   const [lastSavedQuery, setLastSavedQuery] = useState<string | null>(null);
+
+  // Auto-save to localStorage every few seconds
+  const lastAutoSavedRef = useRef("");
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const q = encodeState(state);
+      if (q && q !== lastAutoSavedRef.current) {
+        localStorage.setItem(AUTOSAVE_KEY, q);
+        lastAutoSavedRef.current = q;
+      }
+    }, AUTOSAVE_INTERVAL);
+    return () => clearInterval(timer);
+  }, [state]);
 
   const currentQuery = encodeState(state);
   const hasUnsavedChanges =
@@ -212,7 +250,23 @@ const Index = () => {
   const reset = useCallback(() => {
     setSearchParams("", { replace: true });
     setSelectedCell(null);
+    setLoadedName(null);
+    setLastSavedQuery(null);
+    localStorage.removeItem(AUTOSAVE_KEY);
+    lastAutoSavedRef.current = "";
   }, [setSearchParams]);
+
+  const startFresh = useCallback(() => {
+    reset();
+  }, [reset]);
+
+  const shareUrl = useCallback(() => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(
+      () => toast.success("Link copied to clipboard!"),
+      () => toast.error("Failed to copy link"),
+    );
+  }, []);
 
   const toggleViewMode = useCallback(() => {
     setViewMode((v) => {
@@ -253,13 +307,33 @@ const Index = () => {
             </div>
             <div className="flex items-center gap-2 flex-wrap justify-end">
               {!viewMode && (
-                <CompositionManager
-                  state={state}
-                  loadedName={loadedName}
-                  onLoad={handleLoad}
-                  hasUnsavedChanges={hasUnsavedChanges}
-                  onSaved={handleSaved}
-                />
+                <>
+                  <button
+                    type="button"
+                    onClick={startFresh}
+                    className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
+                    title="Start a new composition"
+                  >
+                    <FilePlus className="w-3.5 h-3.5" />
+                    New
+                  </button>
+                  <button
+                    type="button"
+                    onClick={shareUrl}
+                    className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
+                    title="Copy shareable link"
+                  >
+                    <Link className="w-3.5 h-3.5" />
+                    Share
+                  </button>
+                  <CompositionManager
+                    state={state}
+                    loadedName={loadedName}
+                    onLoad={handleLoad}
+                    hasUnsavedChanges={hasUnsavedChanges}
+                    onSaved={handleSaved}
+                  />
+                </>
               )}
               <button
                 type="button"
