@@ -1,5 +1,6 @@
-import { Eye, Pencil, Plus, RotateCcw } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Eye, FilePlus, Link, Pencil, Plus, RotateCcw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
 import { ComposerGrid } from "@/components/ComposerGrid";
 import { applyTheme, loadTheme } from "@/lib/theme";
@@ -29,8 +30,32 @@ interface SelectedCell {
   beatIdx: number;
 }
 
+const AUTOSAVE_KEY = "handpan-composer-autosave";
+const AUTOSAVE_INTERVAL = 3000;
+
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // On first load, restore from autosave if URL has no composition
+  const initialQuery = useMemo(() => {
+    const urlQuery = window.location.search.slice(1);
+    if (urlQuery) return urlQuery;
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      if (saved) return saved;
+    } catch {}
+    return "";
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const hasRestoredRef = useRef(false);
+  useEffect(() => {
+    if (!hasRestoredRef.current && initialQuery && !searchParams.toString()) {
+      hasRestoredRef.current = true;
+      setSearchParams(initialQuery, { replace: true });
+    }
+  }, [initialQuery, searchParams, setSearchParams]);
+
   const state = useMemo(
     () => decodeState(searchParams.toString()),
     [searchParams],
@@ -40,6 +65,19 @@ const Index = () => {
   const [viewMode, setViewMode] = useState(false);
   const [loadedName, setLoadedName] = useState<string | null>(null);
   const [lastSavedQuery, setLastSavedQuery] = useState<string | null>(null);
+
+  // Auto-save to localStorage every few seconds
+  const lastAutoSavedRef = useRef("");
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const q = encodeState(state);
+      if (q && q !== lastAutoSavedRef.current) {
+        localStorage.setItem(AUTOSAVE_KEY, q);
+        lastAutoSavedRef.current = q;
+      }
+    }, AUTOSAVE_INTERVAL);
+    return () => clearInterval(timer);
+  }, [state]);
 
   const currentQuery = encodeState(state);
   const hasUnsavedChanges =
