@@ -250,7 +250,23 @@ const Index = () => {
   const reset = useCallback(() => {
     setSearchParams("", { replace: true });
     setSelectedCell(null);
+    setLoadedName(null);
+    setLastSavedQuery(null);
+    localStorage.removeItem(AUTOSAVE_KEY);
+    lastAutoSavedRef.current = "";
   }, [setSearchParams]);
+
+  const startFresh = useCallback(() => {
+    reset();
+  }, [reset]);
+
+  const shareUrl = useCallback(() => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(
+      () => toast.success("Link copied to clipboard!"),
+      () => toast.error("Failed to copy link"),
+    );
+  }, []);
 
   const toggleViewMode = useCallback(() => {
     setViewMode((v) => {
