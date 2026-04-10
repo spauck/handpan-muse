@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import type { Hand } from "./composer-state";
 
 export interface Settings {
   rightHandColor: string;
@@ -48,10 +49,11 @@ export function applyColorVars(settings: Settings) {
   );
 }
 
-export function handColorClass(hand: "right" | "left" | "any"): string {
+export function handColorClass(hand: Hand): string {
   if (hand === "right") return "text-hand-right";
   if (hand === "left") return "text-hand-left";
-  return "text-hand-any";
+  if (hand === "any") return "text-hand-any";
+  return "text-hand-none";
 }
 
 interface SettingsContextValue {

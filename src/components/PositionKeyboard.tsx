@@ -1,15 +1,12 @@
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
+
 import { Eraser } from "lucide-react";
 import { useMemo, useState } from "react";
-import {
-  type Beat,
-  beatAllNotes,
-  type Hand,
-  handIndex,
-  type Row,
-} from "@/lib/composer-state";
+import type { Beat, Hand, Row } from "@/lib/composer-state";
 import { handColorClass, useSettings } from "@/lib/settings";
-import { ICON_NAMES, IconNote, isIconNote, getIconName } from "./IconNote";
-import { CompositeGlyph, RadialGlyph } from "./PanScriptGlyph";
+import { handColor } from "./handColor";
+import { NoteGlyph } from "./NoteGlyph";
+import { getNotes } from "./Notes";
 
 interface SelectedCell {
   rowIdx: number;
@@ -30,9 +27,10 @@ const HAND_OPTIONS: { hand: Hand; label: string; short: string }[] = [
   { hand: "right", label: "Right", short: "R" },
   { hand: "left", label: "Left", short: "L" },
   { hand: "any", label: "Any", short: "A" },
+  { hand: "none", label: "None", short: "N" },
 ];
 
-type KeyboardTab = "positions" | "icons" | "chords";
+type KeyboardTab = "notes" | "chords";
 
 /** A chord is a unique combination of notes with their hand assignments */
 interface Chord {
@@ -50,9 +48,8 @@ function serializeChord(notes: Array<{ value: string; hand: Hand }>): string {
 function extractChords(rows: Row[]): Chord[] {
   const seen = new Map<string, Chord>();
   for (const row of rows) {
-    for (const beat of row) {
-      const notes = beatAllNotes(beat);
-      if (notes.length === 0) continue;
+    for (const notes of row) {
+      if (notes.length < 2) continue;
       const key = serializeChord(notes);
       if (!seen.has(key)) {
         seen.set(key, { key, notes });
@@ -73,7 +70,7 @@ export function PositionKeyboard({
 }: PositionKeyboardProps) {
   const { settings } = useSettings();
   const [pendingNote, setPendingNote] = useState<string | null>(null);
-  const [tab, setTab] = useState<KeyboardTab>("positions");
+  const [tab, setTab] = useState<KeyboardTab>("notes");
 
   const chords = useMemo(() => extractChords(rows), [rows]);
 
@@ -81,10 +78,6 @@ export function PositionKeyboard({
 
   const activeMap = new Map(activeNotes.map((n) => [n.value, n.hand]));
   const totalNotes = activeNotes.length;
-  const positions = [
-    0,
-    ...Array.from({ length: settings.panscriptFields }, (_, i) => i + 1),
-  ];
 
   const handleTap = (val: string) => {
     if (activeMap.has(val)) {
@@ -101,12 +94,7 @@ export function PositionKeyboard({
   };
 
   const handleChordTap = (chord: Chord) => {
-    const beat: Beat = [[], [], []];
-    for (const n of chord.notes) {
-      const hi = handIndex(n.hand);
-      beat[hi] = [...beat[hi], n.value];
-    }
-    onSetBeat(beat);
+    onSetBeat(chord.notes);
   };
 
   const existingHand = pendingNote
@@ -116,18 +104,11 @@ export function PositionKeyboard({
 
   const currentChordKey = totalNotes > 0 ? serializeChord(activeNotes) : null;
 
-  const handColor = (hand: Hand) => {
-    return hand === "right"
-      ? `hsl(${settings.rightHandColor})`
-      : hand === "left"
-        ? `hsl(${settings.leftHandColor})`
-        : `hsl(${settings.anyHandColor})`;
-  };
-
   const TAB_OPTIONS: { id: KeyboardTab; label: string }[] = [
-    { id: "positions", label: "Positions" },
-    { id: "icons", label: "Icons" },
-    ...(chords.length > 0 ? [{ id: "chords" as KeyboardTab, label: `Chords (${chords.length})` }] : []),
+    { id: "notes", label: "Notes" },
+    ...(chords.length > 0
+      ? [{ id: "chords" as KeyboardTab, label: `Chords (${chords.length})` }]
+      : []),
   ];
 
   return (
@@ -147,7 +128,10 @@ export function PositionKeyboard({
               <button
                 type="button"
                 key={id}
-                onClick={() => { setTab(id); setPendingNote(null); }}
+                onClick={() => {
+                  setTab(id);
+                  setPendingNote(null);
+                }}
                 className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
                   tab === id
                     ? "bg-accent border-ring text-foreground"
@@ -196,18 +180,16 @@ export function PositionKeyboard({
 
         {/* Note buttons */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          {tab === "positions" &&
-            positions.map((pos) => {
-              const val = String(pos);
+          {tab === "notes" &&
+            Object.entries(getNotes(settings)).map(([val, note]) => {
               const noteHand = activeMap.get(val);
               const isActive = noteHand !== undefined;
               const isPending = pendingNote === val;
-              const activeColor = isActive ? handColor(noteHand) : undefined;
 
               return (
                 <button
                   type="button"
-                  key={pos}
+                  key={val}
                   onClick={() => handleTap(val)}
                   className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg transition-colors border
                     ${
@@ -217,44 +199,16 @@ export function PositionKeyboard({
                           ? "bg-secondary border-current"
                           : "bg-secondary hover:bg-accent text-foreground border-border"
                     }`}
-                  style={isActive ? { color: activeColor } : undefined}
-                  title={pos === 0 ? "Ding" : `Field ${pos}`}
+                  style={isActive ? { color: handColor(noteHand) } : undefined}
+                  title={val === "0" ? "Ding" : `Field ${val}`}
                 >
-                  <RadialGlyph
+                  <note.Component
+                    {...note.props}
+                    noteId={val}
+                    hand={noteHand ?? "none"}
                     settings={settings}
-                    active={[pos]}
-                    color={activeColor}
-                    size={24}
+                    className="relative inset-0 flex items-center justify-center"
                   />
-                </button>
-              );
-            })}
-
-          {tab === "icons" &&
-            ICON_NAMES.map((name) => {
-              const val = `icon:${name}`;
-              const noteHand = activeMap.get(val);
-              const isActive = noteHand !== undefined;
-              const isPending = pendingNote === val;
-              const activeColor = isActive ? handColor(noteHand) : undefined;
-
-              return (
-                <button
-                  type="button"
-                  key={name}
-                  onClick={() => handleTap(val)}
-                  className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg transition-colors border
-                    ${
-                      isPending
-                        ? "ring-2 ring-ring bg-accent border-ring"
-                        : isActive
-                          ? "bg-secondary border-current"
-                          : "bg-secondary hover:bg-accent text-foreground border-border"
-                    }`}
-                  style={isActive ? { color: activeColor } : undefined}
-                  title={name}
-                >
-                  <IconNote name={name} color={activeColor} size={20} />
                 </button>
               );
             })}
@@ -263,12 +217,6 @@ export function PositionKeyboard({
             chords.map((chord) => {
               const isCurrentChord = currentChordKey === chord.key;
               // Separate position notes and icon notes
-              const posNotes = chord.notes.filter((n) => !isIconNote(n.value));
-              const iconNotes = chord.notes.filter((n) => isIconNote(n.value));
-              const posEntries = posNotes.map((n) => ({
-                position: parseInt(n.value, 10),
-                color: handColor(n.hand),
-              }));
 
               return (
                 <button
@@ -281,21 +229,20 @@ export function PositionKeyboard({
                         ? "ring-2 ring-ring bg-accent border-ring"
                         : "bg-secondary hover:bg-accent border-border"
                     }`}
-                  title={chord.notes.map((n) => `${n.hand[0].toUpperCase()}:${n.value}`).join(", ")}
+                  title={chord.notes
+                    .map((n) => `${n.hand[0].toUpperCase()}:${n.value}`)
+                    .join(", ")}
                 >
-                  {posEntries.length > 0 && (
-                    <CompositeGlyph
-                      settings={settings}
-                      entries={posEntries}
-                      size={32}
-                    />
-                  )}
-                  {iconNotes.map((n, i) => (
-                    <span key={i} className="absolute inset-0 flex items-center justify-center">
-                      <IconNote
-                        name={getIconName(n.value)}
-                        color={handColor(n.hand)}
-                        size={20}
+                  {chord.notes.map((n, i) => (
+                    <span
+                      key={i}
+                      className="absolute inset-0 flex items-center justify-center"
+                    >
+                      <NoteGlyph
+                        key={i}
+                        noteId={n.value}
+                        hand={n.hand}
+                        settings={settings}
                       />
                     </span>
                   ))}

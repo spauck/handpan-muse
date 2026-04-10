@@ -1,45 +1,31 @@
-import {
-  Circle,
-  CircleDashed,
-  CircleDot,
-  CircleSmall,
-  Dot,
-  Ghost,
-  type LucideIcon,
-  X,
-} from "lucide-react";
-
-const ICON_MAP: Record<string, LucideIcon> = {
-  circle: Circle,
-  ghost: Ghost,
-  dash: CircleDashed,
-  ding: CircleSmall,
-  ding2: CircleDot,
-  dot: Dot,
-  x: X,
-};
-
-export const ICON_NAMES = Object.keys(ICON_MAP);
+import type { LucideIcon } from "lucide-react";
+import { handColor } from "./handColor";
+import type { BaseNoteProps } from "./Notes";
 
 export function isIconNote(value: string): boolean {
   return value.startsWith("icon:");
 }
 
-export function getIconName(value: string): string {
-  return value.replace("icon:", "");
-}
-
-interface IconNoteProps {
-  name: string;
-  color?: string;
+interface IconNoteProps extends BaseNoteProps {
   size?: number | string;
+  Icon: LucideIcon;
+  strokeWidth?: number;
   className?: string;
 }
 
-export function IconNote({ name, color, size = 16, className }: IconNoteProps) {
-  const Icon = ICON_MAP[name];
-  if (!Icon) return <span className={className}>?</span>;
+export function IconNote({
+  hand,
+  size = 16,
+  Icon,
+  strokeWidth = 2,
+  className,
+}: IconNoteProps) {
   return (
-    <Icon size={size} color={color} className={className} strokeWidth={2} />
+    <Icon
+      size={size}
+      color={handColor(hand)}
+      className={className}
+      strokeWidth={strokeWidth}
+    />
   );
 }

@@ -1,4 +1,5 @@
 import { Moon, Settings, Sun } from "lucide-react";
+import { useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -7,8 +8,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useSettings } from "@/lib/settings";
-import { type Theme, applyTheme, loadTheme } from "@/lib/theme";
-import { useState } from "react";
+import { applyTheme, loadTheme, type Theme } from "@/lib/theme";
 
 const COLOR_PRESETS = [
   { label: "Red", hsl: "0 70% 58%" },

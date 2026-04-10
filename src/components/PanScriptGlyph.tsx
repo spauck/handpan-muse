@@ -7,6 +7,8 @@
 
 import type { Settings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
+import { handColor } from "./handColor";
+import type { BaseNoteProps } from "./Notes";
 
 function getFieldAngle(index: number, total: number, offset: number): number {
   const side = index % 2 ? -1 : 1;
@@ -14,10 +16,7 @@ function getFieldAngle(index: number, total: number, offset: number): number {
   return Math.PI / 2 + (2 * Math.PI * (increment * side + offset)) / total;
 }
 
-interface RadialGlyphProps {
-  settings: Settings;
-  active: number[];
-  color?: string;
+interface RadialGlyphProps extends BaseNoteProps {
   size?: number;
   fluid?: boolean;
   className?: string;
@@ -26,17 +25,18 @@ interface RadialGlyphProps {
 /** Single-hand radial glyph */
 export function RadialGlyph({
   settings,
-  active,
-  color,
+  noteId,
+  hand,
   size = 28,
   fluid,
   className,
 }: RadialGlyphProps) {
-  const cx = 50,
-    cy = 50;
+  const cx = 50;
+  const cy = 50;
   const innerR = 24;
   const outerR = 44;
-  const activeSet = new Set(active);
+  const note = Number.parseInt(noteId, 10);
+  const color = handColor(hand);
 
   return (
     <svg
@@ -47,16 +47,16 @@ export function RadialGlyph({
       className={cn("shrink-0", className)}
     >
       {/* Ding — small dot */}
-      {activeSet.has(0) && (
-        <circle cx={cx} cy={cy} r={5} fill={color || "currentColor"} />
+      {note === 0 && (
+        <circle cx={cx} cy={cy} r={7} fill={color || "currentColor"} />
       )}
       {/* Tone field lines */}
-      {Array.from(activeSet).map((pos) => {
-        if (pos === 0) return null;
-        if (pos > settings.panscriptFields) return null;
+      {(() => {
+        if (note === 0) return null;
+        if (note > settings.panscriptFields) return <text>X</text>;
 
         const angle = getFieldAngle(
-          pos,
+          note,
           settings.panscriptFields,
           settings.panscriptFieldOffset,
         );
@@ -66,7 +66,7 @@ export function RadialGlyph({
         const y2 = cy + outerR * Math.sin(angle);
         return (
           <line
-            key={pos}
+            key={noteId}
             x1={x1}
             y1={y1}
             x2={x2}
@@ -76,7 +76,7 @@ export function RadialGlyph({
             strokeLinecap="round"
           />
         );
-      })}
+      })()}
     </svg>
   );
 }
@@ -117,9 +117,7 @@ export function CompositeGlyph({
     >
       {entries.map((entry, i) => {
         if (entry.position === 0) {
-          return (
-            <circle key={i} cx={cx} cy={cy} r={5} fill={entry.color} />
-          );
+          return <circle key={i} cx={cx} cy={cy} r={5} fill={entry.color} />;
         }
         if (entry.position > settings.panscriptFields) return null;
         const angle = getFieldAngle(

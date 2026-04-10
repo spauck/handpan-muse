@@ -1,11 +1,9 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
 
 import { Circle, Dot } from "lucide-react";
-import { type Beat, beatAllNotes, type Hand } from "@/lib/composer-state";
-import type { Settings } from "@/lib/settings";
+import type { Beat } from "@/lib/composer-state";
 import { useSettings } from "@/lib/settings";
-import { getIconName, IconNote, isIconNote } from "./IconNote";
-import { RadialGlyph } from "./PanScriptGlyph";
+import { NoteGlyph } from "./NoteGlyph";
 
 interface UnifiedBeatCellProps {
   beat: Beat;
@@ -15,8 +13,7 @@ interface UnifiedBeatCellProps {
 
 export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
   const { settings } = useSettings();
-  const allNotes = beatAllNotes(beat);
-  const isEmpty = allNotes.length === 0;
+  const isEmpty = beat.length === 0;
 
   return (
     <button
@@ -34,15 +31,20 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
       ) : (
         <>
           <span className="absolute inset-0 flex items-center justify-center">
-            <Circle className="text-beat-empty" size={58} strokeWidth={1} />
+            <Circle className="text-beat-empty" size={"80%"} strokeWidth={1} />
           </span>
-          {allNotes.map((n, i) => {
+          {beat.map((n, i) => {
             return (
               <span
                 key={i}
                 className="absolute inset-0 flex items-center justify-center"
               >
-                <NoteGlyph key={i} note={n} settings={settings} />
+                <NoteGlyph
+                  key={i}
+                  noteId={n.value}
+                  hand={n.hand}
+                  settings={settings}
+                />
               </span>
             );
           })}
@@ -51,38 +53,3 @@ export function BeatCell({ beat, isSelected, onSelect }: UnifiedBeatCellProps) {
     </button>
   );
 }
-
-const handColor = (settings: Settings, hand: "right" | "left" | "any") => {
-  return `hsl(${settings[`${hand}HandColor`]})`;
-};
-
-const NoteGlyph = ({
-  note,
-  settings,
-}: {
-  note: { value: string; hand: Hand };
-  settings: Settings;
-}) => {
-  if (isIconNote(note.value)) {
-    return (
-      <IconNote
-        name={getIconName(note.value)}
-        color={handColor(settings, note.hand)}
-        size="80%"
-      />
-    );
-  }
-  const pos = parseInt(note.value, 10);
-  if (Number.isNaN(pos)) return null;
-
-  return (
-    <RadialGlyph
-      fluid
-      className="absolute inset-0 flex items-center justify-center"
-      settings={settings}
-      active={[pos]}
-      color={handColor(settings, note.hand)}
-      size={94}
-    />
-  );
-};

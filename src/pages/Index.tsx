@@ -1,21 +1,26 @@
-import { Eye, FilePlus, Link, Pencil, Plus, RotateCcw } from "lucide-react";
+import {
+  Eye,
+  FilePlus,
+  Infinity as InfinityLucide,
+  Link,
+  Pencil,
+  Plus,
+  RotateCcw,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import { ComposerGrid } from "@/components/ComposerGrid";
-import { applyTheme, loadTheme } from "@/lib/theme";
 import { CompositionManager } from "@/components/CompositionManager";
 import { PositionKeyboard } from "@/components/PositionKeyboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import {
   type Beat,
-  beatAllNotes,
   type ComposerState,
   createEmptyRow,
   decodeState,
   encodeState,
   type Hand,
-  handIndex,
 } from "@/lib/composer-state";
 import {
   applyColorVars,
@@ -24,6 +29,7 @@ import {
   SettingsContext,
   saveSettings,
 } from "@/lib/settings";
+import { applyTheme, loadTheme } from "@/lib/theme";
 
 interface SelectedCell {
   rowIdx: number;
@@ -45,7 +51,7 @@ const Index = () => {
       if (saved) return saved;
     } catch {}
     return "";
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const hasRestoredRef = useRef(false);
@@ -123,9 +129,7 @@ const Index = () => {
 
   const activeNotes = useMemo<Array<{ value: string; hand: Hand }>>(() => {
     if (!selectedCell) return [];
-    const beat = state.rows[selectedCell.rowIdx]?.[selectedCell.beatIdx];
-    if (!beat) return [];
-    return beatAllNotes(beat);
+    return state.rows[selectedCell.rowIdx]?.[selectedCell.beatIdx] ?? [];
   }, [selectedCell, state]);
 
   const handleAssignNote = useCallback(
@@ -138,14 +142,7 @@ const Index = () => {
         if (ri !== rowIdx) return row;
         return row.map((beat, bi): Beat => {
           if (bi !== beatIdx) return beat;
-          const cleaned: Beat = [
-            beat[0].filter((n) => n !== value),
-            beat[1].filter((n) => n !== value),
-            beat[2].filter((n) => n !== value),
-          ];
-          const hi = handIndex(hand);
-          cleaned[hi] = [...cleaned[hi], value];
-          return cleaned;
+          return [...beat.filter((n) => n.value !== value), { value, hand }];
         });
       });
 
@@ -167,11 +164,7 @@ const Index = () => {
         if (ri !== rowIdx) return row;
         return row.map((beat, bi): Beat => {
           if (bi !== beatIdx) return beat;
-          return [
-            beat[0].filter((n) => n !== value),
-            beat[1].filter((n) => n !== value),
-            beat[2].filter((n) => n !== value),
-          ];
+          return beat.filter((n) => n.value !== value);
         });
       });
       updateState({ ...state, rows: newRows });
@@ -186,7 +179,7 @@ const Index = () => {
       if (ri !== rowIdx) return row;
       return row.map((beat, bi): Beat => {
         if (bi !== beatIdx) return beat;
-        return [[], [], []];
+        return [];
       });
     });
     updateState({ ...state, rows: newRows });
@@ -236,10 +229,7 @@ const Index = () => {
       if (field !== "notesPerCount") {
         const totalBeats = newState.beatsPerBar * newState.barsPerRow;
         newState.rows = newState.rows.map((row) =>
-          Array.from(
-            { length: totalBeats },
-            (_, i): Beat => row[i] ?? [[], [], []],
-          ),
+          Array.from({ length: totalBeats }, (_, i): Beat => row[i] ?? []),
         );
       }
       updateState(newState);
@@ -287,14 +277,16 @@ const Index = () => {
           <div className="mb-6 flex items-start justify-between">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-                🪘 Handpan Composer
+                Note
+                <InfinityLucide className="inline" size={40} />
               </h1>
               {!viewMode && (
                 <p className="text-sm text-muted-foreground mt-1">
                   Tap a cell, pick a position ·{" "}
                   <span className="text-hand-right">R</span> ·{" "}
                   <span className="text-hand-left">L</span> ·{" "}
-                  <span className="text-hand-any">A</span>
+                  <span className="text-hand-any">A</span> ·{" "}
+                  <span className="text-hand-none">N</span>
                 </p>
               )}
               {!viewMode && loadedName && (

@@ -59,6 +59,7 @@ export default {
         "hand-right": "hsl(var(--hand-right))",
         "hand-left": "hsl(var(--hand-left))",
         "hand-any": "hsl(var(--hand-any))",
+        "hand-none": "hsl(var(--hand-none))",
         "beat-empty": "hsl(var(--beat-empty))",
         "bar-divider": "hsl(var(--bar-divider))",
         sidebar: {
