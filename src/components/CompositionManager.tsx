@@ -119,8 +119,54 @@ export function CompositionManager({
     }
   }, [deleteTarget]);
 
+  /* ── Export / Import ── */
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExport = useCallback(() => {
+    const data = exportAllCompositions();
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "handpan-compositions.json";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Compositions exported");
+  }, []);
+
+  const handleImport = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const count = importCompositions(reader.result as string, false);
+          toast.success(`Imported ${count} composition${count !== 1 ? "s" : ""}`);
+        } catch {
+          toast.error("Invalid file format");
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = "";
+    },
+    [],
+  );
+
   return (
     <>
+      {/* Hidden file input for import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        className="hidden"
+        onChange={handleFileChange}
+      />
       {/* Toolbar buttons */}
       <button
         type="button"
@@ -139,6 +185,24 @@ export function CompositionManager({
       >
         <FolderOpen className="w-3.5 h-3.5" />
         Load
+      </button>
+      <button
+        type="button"
+        onClick={handleExport}
+        className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
+        title="Export all saved compositions"
+      >
+        <Download className="w-3.5 h-3.5" />
+        Export
+      </button>
+      <button
+        type="button"
+        onClick={handleImport}
+        className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
+        title="Import compositions from file"
+      >
+        <Upload className="w-3.5 h-3.5" />
+        Import
       </button>
 
       {/* ── Save dialog ── */}
