@@ -70,7 +70,6 @@ export function PositionKeyboard({
 }: PositionKeyboardProps) {
   const { settings } = useSettings();
   const [tab, setTab] = useState<KeyboardTab>("notes");
-  const [tab, setTab] = useState<KeyboardTab>("notes");
   const [lastHand, setLastHand] = useState<Hand>("right");
 
   const chords = useMemo(() => extractChords(rows), [rows]);
@@ -84,16 +83,8 @@ export function PositionKeyboard({
     if (activeMap.has(val)) {
       onRemoveNote(val);
     } else {
-      // Auto-assign using last used hand
       onAssignNote(val, lastHand);
     }
-  };
-
-  const handleHandPick = (hand: Hand) => {
-    if (!pendingNote) return;
-    setLastHand(hand);
-    onAssignNote(pendingNote, hand);
-    setPendingNote(null);
   };
 
   const handleChordTap = (chord: Chord) => {
