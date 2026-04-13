@@ -100,11 +100,6 @@ export function PositionKeyboard({
     onSetBeat(chord.notes);
   };
 
-  const existingHand = pendingNote
-    ? (activeMap.get(pendingNote) ?? null)
-    : null;
-  const isNewNote = pendingNote !== null && !activeMap.has(pendingNote);
-
   const currentChordKey = totalNotes > 0 ? serializeChord(activeNotes) : null;
 
   const TAB_OPTIONS: { id: KeyboardTab; label: string }[] = [
@@ -127,6 +122,26 @@ export function PositionKeyboard({
             </span>
           )}
           <div className="ml-auto flex items-center gap-1">
+            {/* Hand selector */}
+            {tab === "notes" && HAND_OPTIONS.map(({ hand, short }) => {
+              const isActive = lastHand === hand;
+              const colorCls = handColorClass(hand);
+              return (
+                <button
+                  type="button"
+                  key={hand}
+                  onClick={() => setLastHand(hand)}
+                  className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors font-semibold ${
+                    isActive
+                      ? `${colorCls} border-ring bg-accent`
+                      : `${colorCls} border-border hover:border-ring/50`
+                  }`}
+                >
+                  {short}
+                </button>
+              );
+            })}
+            <span className="w-px h-4 bg-border mx-0.5" />
             {TAB_OPTIONS.map(({ id, label }) => (
               <button
                 type="button"
@@ -146,38 +161,6 @@ export function PositionKeyboard({
             ))}
           </div>
         </div>
-
-        {/* Hand picker */}
-        {pendingNote !== null && tab !== "chords" && (
-          <div className="flex items-center gap-1.5 mb-1.5 bg-secondary/50 rounded-lg px-2 py-1.5 border border-border">
-            <span className="text-xs text-muted-foreground mr-1">
-              {isNewNote ? "Add to:" : "Move to:"}
-            </span>
-            {HAND_OPTIONS.map(({ hand, label, short }) => {
-              const isCurrentHand = existingHand === hand;
-              const colorCls = handColorClass(hand);
-              return (
-                <button
-                  type="button"
-                  key={hand}
-                  onClick={() => handleHandPick(hand)}
-                  className={`px-3 py-1 rounded text-xs font-semibold transition-colors border ${
-                    isCurrentHand
-                      ? `${colorCls} border-ring bg-accent`
-                      : `${colorCls} border-border hover:border-ring/50 hover:bg-accent/50`
-                  }`}
-                >
-                  {short} · {label}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={() => setPendingNote(null)}
-              className="ml-auto text-[10px] text-muted-foreground hover:text-foreground"
-            >
-              Cancel
-            </button>
           </div>
         )}
 
