@@ -137,10 +137,7 @@ export function PositionKeyboard({
               <button
                 type="button"
                 key={id}
-                onClick={() => {
-                  setTab(id);
-                  setPendingNote(null);
-                }}
+                onClick={() => setTab(id)}
                 className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
                   tab === id
                     ? "bg-accent border-ring text-foreground"
