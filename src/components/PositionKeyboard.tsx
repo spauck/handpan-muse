@@ -69,7 +69,7 @@ export function PositionKeyboard({
   onSetBeat,
 }: PositionKeyboardProps) {
   const { settings } = useSettings();
-  const [pendingNote, setPendingNote] = useState<string | null>(null);
+  const [tab, setTab] = useState<KeyboardTab>("notes");
   const [tab, setTab] = useState<KeyboardTab>("notes");
   const [lastHand, setLastHand] = useState<Hand>("right");
 
