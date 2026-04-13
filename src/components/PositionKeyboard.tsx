@@ -159,6 +159,7 @@ export function PositionKeyboard({
                 {label}
               </button>
             ))}
+          </div>
         </div>
 
         {/* Note buttons */}
