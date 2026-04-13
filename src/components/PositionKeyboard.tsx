@@ -159,10 +159,7 @@ export function PositionKeyboard({
                 {label}
               </button>
             ))}
-          </div>
         </div>
-          </div>
-        )}
 
         {/* Note buttons */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
