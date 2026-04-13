@@ -36,3 +36,24 @@ export function deleteComposition(name: string): void {
 export function compositionExists(name: string): boolean {
   return listSavedCompositions().some((c) => c.name === name);
 }
+
+export function exportAllCompositions(): string {
+  return JSON.stringify(listSavedCompositions(), null, 2);
+}
+
+export function importCompositions(json: string, overwrite = false): number {
+  const incoming = JSON.parse(json) as SavedComposition[];
+  if (!Array.isArray(incoming)) throw new Error("Invalid format");
+  const existing = listSavedCompositions();
+  const map = new Map(existing.map((c) => [c.name, c]));
+  let count = 0;
+  for (const comp of incoming) {
+    if (!comp.name || !comp.queryString) continue;
+    if (!map.has(comp.name) || overwrite) {
+      map.set(comp.name, comp);
+      count++;
+    }
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(map.values())));
+  return count;
+}

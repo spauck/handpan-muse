@@ -69,8 +69,8 @@ export function PositionKeyboard({
   onSetBeat,
 }: PositionKeyboardProps) {
   const { settings } = useSettings();
-  const [pendingNote, setPendingNote] = useState<string | null>(null);
   const [tab, setTab] = useState<KeyboardTab>("notes");
+  const [lastHand, setLastHand] = useState<Hand>("right");
 
   const chords = useMemo(() => extractChords(rows), [rows]);
 
@@ -83,24 +83,13 @@ export function PositionKeyboard({
     if (activeMap.has(val)) {
       onRemoveNote(val);
     } else {
-      setPendingNote(pendingNote === val ? null : val);
+      onAssignNote(val, lastHand);
     }
-  };
-
-  const handleHandPick = (hand: Hand) => {
-    if (!pendingNote) return;
-    onAssignNote(pendingNote, hand);
-    setPendingNote(null);
   };
 
   const handleChordTap = (chord: Chord) => {
     onSetBeat(chord.notes);
   };
-
-  const existingHand = pendingNote
-    ? (activeMap.get(pendingNote) ?? null)
-    : null;
-  const isNewNote = pendingNote !== null && !activeMap.has(pendingNote);
 
   const currentChordKey = totalNotes > 0 ? serializeChord(activeNotes) : null;
 
@@ -124,14 +113,31 @@ export function PositionKeyboard({
             </span>
           )}
           <div className="ml-auto flex items-center gap-1">
+            {/* Hand selector */}
+            {tab === "notes" && HAND_OPTIONS.map(({ hand, short }) => {
+              const isActive = lastHand === hand;
+              const colorCls = handColorClass(hand);
+              return (
+                <button
+                  type="button"
+                  key={hand}
+                  onClick={() => setLastHand(hand)}
+                  className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors font-semibold ${
+                    isActive
+                      ? `${colorCls} border-ring bg-accent`
+                      : `${colorCls} border-border hover:border-ring/50`
+                  }`}
+                >
+                  {short}
+                </button>
+              );
+            })}
+            <span className="w-px h-4 bg-border mx-0.5" />
             {TAB_OPTIONS.map(({ id, label }) => (
               <button
                 type="button"
                 key={id}
-                onClick={() => {
-                  setTab(id);
-                  setPendingNote(null);
-                }}
+                onClick={() => setTab(id)}
                 className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
                   tab === id
                     ? "bg-accent border-ring text-foreground"
@@ -144,47 +150,12 @@ export function PositionKeyboard({
           </div>
         </div>
 
-        {/* Hand picker */}
-        {pendingNote !== null && tab !== "chords" && (
-          <div className="flex items-center gap-1.5 mb-1.5 bg-secondary/50 rounded-lg px-2 py-1.5 border border-border">
-            <span className="text-xs text-muted-foreground mr-1">
-              {isNewNote ? "Add to:" : "Move to:"}
-            </span>
-            {HAND_OPTIONS.map(({ hand, label, short }) => {
-              const isCurrentHand = existingHand === hand;
-              const colorCls = handColorClass(hand);
-              return (
-                <button
-                  type="button"
-                  key={hand}
-                  onClick={() => handleHandPick(hand)}
-                  className={`px-3 py-1 rounded text-xs font-semibold transition-colors border ${
-                    isCurrentHand
-                      ? `${colorCls} border-ring bg-accent`
-                      : `${colorCls} border-border hover:border-ring/50 hover:bg-accent/50`
-                  }`}
-                >
-                  {short} · {label}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={() => setPendingNote(null)}
-              className="ml-auto text-[10px] text-muted-foreground hover:text-foreground"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
-
         {/* Note buttons */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
           {tab === "notes" &&
             Object.entries(getNotes(settings)).map(([val, note]) => {
               const noteHand = activeMap.get(val);
               const isActive = noteHand !== undefined;
-              const isPending = pendingNote === val;
 
               return (
                 <button
@@ -193,11 +164,9 @@ export function PositionKeyboard({
                   onClick={() => handleTap(val)}
                   className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg transition-colors border
                     ${
-                      isPending
-                        ? "ring-2 ring-ring bg-accent border-ring"
-                        : isActive
-                          ? "bg-secondary border-current"
-                          : "bg-secondary hover:bg-accent text-foreground border-border"
+                      isActive
+                        ? "bg-secondary border-current"
+                        : "bg-secondary hover:bg-accent text-foreground border-border"
                     }`}
                   style={isActive ? { color: handColor(noteHand) } : undefined}
                   title={val === "0" ? "Ding" : `Field ${val}`}
