@@ -1,6 +1,11 @@
 import { Download, FolderOpen, Save, Trash2, Upload } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
@@ -20,6 +25,8 @@ import { type ComposerState, encodeState } from "@/lib/composer-state";
 import {
   compositionExists,
   deleteComposition,
+  exportAllCompositions,
+  importCompositions,
   listSavedCompositions,
   type SavedComposition,
   saveComposition,
