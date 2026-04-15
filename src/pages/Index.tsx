@@ -108,7 +108,9 @@ const Index = () => {
 
   const handleLoad = useCallback(
     (queryString: string, name: string) => {
-      setSearchParams(queryString, { replace: true });
+      const params = new URLSearchParams(queryString);
+      params.set("name", name);
+      setSearchParams(params.toString(), { replace: true });
       setLoadedName(name);
       setLastSavedQuery(queryString);
       setSelectedCell(null);
