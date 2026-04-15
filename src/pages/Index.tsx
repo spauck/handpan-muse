@@ -449,15 +449,6 @@ const Index = () => {
                   ))}
                 </select>
               </label>
-              <button
-                type="button"
-                onClick={reset}
-                className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                title="Reset composition"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                Reset
-              </button>
             </div>
           )}
 
