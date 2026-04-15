@@ -20,6 +20,12 @@ import { CompositionManager } from "@/components/CompositionManager";
 import { PositionKeyboard } from "@/components/PositionKeyboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   type Beat,
   type ComposerState,
   createEmptyRow,
