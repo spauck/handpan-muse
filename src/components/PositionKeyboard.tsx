@@ -114,24 +114,25 @@ export function PositionKeyboard({
           )}
           <div className="ml-auto flex items-center gap-1">
             {/* Hand selector */}
-            {tab === "notes" && HAND_OPTIONS.map(({ hand, short }) => {
-              const isActive = lastHand === hand;
-              const colorCls = handColorClass(hand);
-              return (
-                <button
-                  type="button"
-                  key={hand}
-                  onClick={() => setLastHand(hand)}
-                  className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors font-semibold ${
-                    isActive
-                      ? `${colorCls} border-ring bg-accent`
-                      : `${colorCls} border-border hover:border-ring/50`
-                  }`}
-                >
-                  {short}
-                </button>
-              );
-            })}
+            {tab === "notes" &&
+              HAND_OPTIONS.map(({ hand, short }) => {
+                const isActive = lastHand === hand;
+                const colorCls = handColorClass(hand);
+                return (
+                  <button
+                    type="button"
+                    key={hand}
+                    onClick={() => setLastHand(hand)}
+                    className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors font-semibold ${
+                      isActive
+                        ? `${colorCls} border-ring bg-accent`
+                        : `${colorCls} border-border hover:border-ring/50`
+                    }`}
+                  >
+                    {short}
+                  </button>
+                );
+              })}
             <span className="w-px h-4 bg-border mx-0.5" />
             {TAB_OPTIONS.map(({ id, label }) => (
               <button
