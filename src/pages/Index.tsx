@@ -80,7 +80,11 @@ const Index = () => {
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
   const [viewMode, setViewMode] = useState(false);
-  const [loadedName, setLoadedName] = useState<string | null>(null);
+  // Read name from URL on init
+  const [loadedName, setLoadedName] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("name") || null;
+  });
   const [lastSavedQuery, setLastSavedQuery] = useState<string | null>(null);
 
   // Auto-save to localStorage every few seconds
