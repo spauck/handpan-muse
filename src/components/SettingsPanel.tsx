@@ -14,7 +14,7 @@ const COLOR_PRESETS = [
   { label: "Red", hsl: "0 70% 58%" },
   { label: "Green", hsl: "140 60% 45%" },
   { label: "Blue", hsl: "210 80% 60%" },
-  { label: "Neutral", hslDark: "220 10% 55%", hslLight: "220 15% 40%" },
+  { label: "Neutral", hsl: "var(--foreground)" },
 ] as const;
 
 const HAND_CONFIGS = [
@@ -88,8 +88,10 @@ export function SettingsPanel() {
             </h3>
             <div className="space-y-3">
               {HAND_CONFIGS.map(({ key, label }) => (
-                <div key={key} className="space-y-1.5">
-                  <span className="text-sm text-muted-foreground">{label}</span>
+                <div key={key} className="space-x-1.5 flex items-center">
+                  <span className="text-sm text-muted-foreground w-20">
+                    {label}
+                  </span>
                   <div className="flex gap-1.5">
                     {COLOR_PRESETS.map((preset) => {
                       const hsl = getPresetHsl(preset);
@@ -99,7 +101,7 @@ export function SettingsPanel() {
                           key={preset.label}
                           type="button"
                           onClick={() => setColor(key, hsl)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs border transition-colors ${
+                          className={`flex items-center gap-1.5 px-0.5 py-0.5 rounded-full text-xs border-2 transition-colors ${
                             isActive
                               ? "border-ring bg-accent text-foreground font-semibold"
                               : "border-border text-muted-foreground hover:text-foreground hover:border-ring/50"
@@ -109,7 +111,6 @@ export function SettingsPanel() {
                             className="w-3 h-3 rounded-full shrink-0"
                             style={{ backgroundColor: `hsl(${hsl})` }}
                           />
-                          {preset.label}
                         </button>
                       );
                     })}
