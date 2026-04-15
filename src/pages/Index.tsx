@@ -1,11 +1,16 @@
 import {
+  Download,
   Eye,
   FilePlus,
+  FolderOpen,
   Infinity as InfinityLucide,
   Link,
+  Menu,
   Pencil,
   Plus,
   RotateCcw,
+  Save,
+  Upload,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -14,6 +19,12 @@ import { ComposerGrid } from "@/components/ComposerGrid";
 import { CompositionManager } from "@/components/CompositionManager";
 import { PositionKeyboard } from "@/components/PositionKeyboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   type Beat,
   type ComposerState,
@@ -69,7 +80,11 @@ const Index = () => {
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
   const [viewMode, setViewMode] = useState(false);
-  const [loadedName, setLoadedName] = useState<string | null>(null);
+  // Read name from URL on init
+  const [loadedName, setLoadedName] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("name") || null;
+  });
   const [lastSavedQuery, setLastSavedQuery] = useState<string | null>(null);
 
   // Auto-save to localStorage every few seconds
@@ -93,7 +108,9 @@ const Index = () => {
 
   const handleLoad = useCallback(
     (queryString: string, name: string) => {
-      setSearchParams(queryString, { replace: true });
+      const params = new URLSearchParams(queryString);
+      params.set("name", name);
+      setSearchParams(params.toString(), { replace: true });
       setLoadedName(name);
       setLastSavedQuery(queryString);
       setSelectedCell(null);
@@ -251,12 +268,17 @@ const Index = () => {
   }, [reset]);
 
   const shareUrl = useCallback(() => {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url).then(
+    const url = new URL(window.location.href);
+    if (loadedName) {
+      url.searchParams.set("name", loadedName);
+    } else {
+      url.searchParams.delete("name");
+    }
+    navigator.clipboard.writeText(url.toString()).then(
       () => toast.success("Link copied to clipboard!"),
       () => toast.error("Failed to copy link"),
     );
-  }, []);
+  }, [loadedName]);
 
   const toggleViewMode = useCallback(() => {
     setViewMode((v) => {
@@ -264,6 +286,14 @@ const Index = () => {
       return !v;
     });
   }, []);
+
+  const compositionManager = CompositionManager({
+    state,
+    loadedName,
+    onLoad: handleLoad,
+    hasUnsavedChanges,
+    onSaved: handleSaved,
+  });
 
   return (
     <SettingsContext.Provider
@@ -289,7 +319,7 @@ const Index = () => {
                   <span className="text-hand-none">N</span>
                 </p>
               )}
-              {!viewMode && loadedName && (
+              {loadedName && (
                 <span className="text-xs text-muted-foreground">
                   <span className="font-medium text-foreground">
                     {loadedName}
@@ -297,35 +327,48 @@ const Index = () => {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2 flex-wrap justify-end">
+            <div className="flex items-center gap-2">
               {!viewMode && (
-                <>
-                  <button
-                    type="button"
-                    onClick={startFresh}
-                    className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
-                    title="Start a new composition"
-                  >
-                    <FilePlus className="w-3.5 h-3.5" />
-                    New
-                  </button>
-                  <button
-                    type="button"
-                    onClick={shareUrl}
-                    className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
-                    title="Copy shareable link"
-                  >
-                    <Link className="w-3.5 h-3.5" />
-                    Share
-                  </button>
-                  <CompositionManager
-                    state={state}
-                    loadedName={loadedName}
-                    onLoad={handleLoad}
-                    hasUnsavedChanges={hasUnsavedChanges}
-                    onSaved={handleSaved}
-                  />
-                </>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
+                    >
+                      <Menu className="w-3.5 h-3.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem onClick={startFresh}>
+                      <FilePlus className="w-3.5 h-3.5 mr-2" />
+                      New
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={compositionManager.openSave}>
+                      <Save className="w-3.5 h-3.5 mr-2" />
+                      Save
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={compositionManager.openLoad}>
+                      <FolderOpen className="w-3.5 h-3.5 mr-2" />
+                      Load
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={shareUrl}>
+                      <Link className="w-3.5 h-3.5 mr-2" />
+                      Share
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={compositionManager.handleExport}>
+                      <Download className="w-3.5 h-3.5 mr-2" />
+                      Export
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={compositionManager.handleImport}>
+                      <Upload className="w-3.5 h-3.5 mr-2" />
+                      Import
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={reset}>
+                      <RotateCcw className="w-3.5 h-3.5 mr-2" />
+                      Reset
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
               <button
                 type="button"
@@ -408,15 +451,6 @@ const Index = () => {
                   ))}
                 </select>
               </label>
-              <button
-                type="button"
-                onClick={reset}
-                className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                title="Reset composition"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                Reset
-              </button>
             </div>
           )}
 
@@ -455,6 +489,7 @@ const Index = () => {
           onSetBeat={handleSetBeat}
         />
       )}
+      {compositionManager.dialogs}
     </SettingsContext.Provider>
   );
 };
