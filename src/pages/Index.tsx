@@ -266,12 +266,17 @@ const Index = () => {
   }, [reset]);
 
   const shareUrl = useCallback(() => {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url).then(
+    const url = new URL(window.location.href);
+    if (loadedName) {
+      url.searchParams.set("name", loadedName);
+    } else {
+      url.searchParams.delete("name");
+    }
+    navigator.clipboard.writeText(url.toString()).then(
       () => toast.success("Link copied to clipboard!"),
       () => toast.error("Failed to copy link"),
     );
-  }, []);
+  }, [loadedName]);
 
   const toggleViewMode = useCallback(() => {
     setViewMode((v) => {
