@@ -285,6 +285,14 @@ const Index = () => {
     });
   }, []);
 
+  const compositionManager = CompositionManager({
+    state,
+    loadedName,
+    onLoad: handleLoad,
+    hasUnsavedChanges,
+    onSaved: handleSaved,
+  });
+
   return (
     <SettingsContext.Provider
       value={{ settings, updateSettings: handleUpdateSettings }}
@@ -309,7 +317,7 @@ const Index = () => {
                   <span className="text-hand-none">N</span>
                 </p>
               )}
-              {!viewMode && loadedName && (
+              {loadedName && (
                 <span className="text-xs text-muted-foreground">
                   <span className="font-medium text-foreground">
                     {loadedName}
@@ -317,35 +325,48 @@ const Index = () => {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2 flex-wrap justify-end">
+            <div className="flex items-center gap-2">
               {!viewMode && (
-                <>
-                  <button
-                    type="button"
-                    onClick={startFresh}
-                    className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
-                    title="Start a new composition"
-                  >
-                    <FilePlus className="w-3.5 h-3.5" />
-                    New
-                  </button>
-                  <button
-                    type="button"
-                    onClick={shareUrl}
-                    className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
-                    title="Copy shareable link"
-                  >
-                    <Link className="w-3.5 h-3.5" />
-                    Share
-                  </button>
-                  <CompositionManager
-                    state={state}
-                    loadedName={loadedName}
-                    onLoad={handleLoad}
-                    hasUnsavedChanges={hasUnsavedChanges}
-                    onSaved={handleSaved}
-                  />
-                </>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded transition-colors border text-muted-foreground hover:text-foreground border-border hover:border-primary/50"
+                    >
+                      <Menu className="w-3.5 h-3.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem onClick={startFresh}>
+                      <FilePlus className="w-3.5 h-3.5 mr-2" />
+                      New
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={compositionManager.openSave}>
+                      <Save className="w-3.5 h-3.5 mr-2" />
+                      Save
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={compositionManager.openLoad}>
+                      <FolderOpen className="w-3.5 h-3.5 mr-2" />
+                      Load
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={shareUrl}>
+                      <Link className="w-3.5 h-3.5 mr-2" />
+                      Share
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={compositionManager.handleExport}>
+                      <Download className="w-3.5 h-3.5 mr-2" />
+                      Export
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={compositionManager.handleImport}>
+                      <Upload className="w-3.5 h-3.5 mr-2" />
+                      Import
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={reset}>
+                      <RotateCcw className="w-3.5 h-3.5 mr-2" />
+                      Reset
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
               <button
                 type="button"
