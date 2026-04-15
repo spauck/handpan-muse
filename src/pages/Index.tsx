@@ -486,6 +486,7 @@ const Index = () => {
           onClearAll={handleClearAll}
           onSetBeat={handleSetBeat}
         />
+      )}
       {compositionManager.dialogs}
     </SettingsContext.Provider>
   );
