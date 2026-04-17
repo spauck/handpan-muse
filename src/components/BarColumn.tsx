@@ -64,7 +64,7 @@ export function BarColumn({
 
   return (
     <div
-      className="grid"
+      className="grid group"
       style={{ gridTemplateColumns, gridColumn: `span ${beatCount}` }}
     >
       {/* Count labels */}

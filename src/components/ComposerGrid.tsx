@@ -40,10 +40,7 @@ export function ComposerGrid({
 }: ComposerGridProps) {
   const handleSelect = (barIdx: number, beatIdx: number) => {
     if (viewMode) return;
-    if (
-      selectedCell?.barIdx === barIdx &&
-      selectedCell?.beatIdx === beatIdx
-    ) {
+    if (selectedCell?.barIdx === barIdx && selectedCell?.beatIdx === beatIdx) {
       onSelectCell(null);
     } else {
       onSelectCell({ barIdx, beatIdx });
@@ -87,7 +84,7 @@ export function ComposerGrid({
         return (
           <div
             key={rowIdx}
-            className="bg-card rounded-lg px-3 pt-2 pb-1 sm:px-4 border border-border group relative"
+            className="bg-card rounded-lg px-3 pt-2 pb-1 sm:px-4 border border-border relative"
           >
             {!viewMode && (
               <div className="text-[10px] text-muted-foreground mb-1 font-mono flex items-center gap-2">
