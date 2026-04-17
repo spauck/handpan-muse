@@ -81,7 +81,55 @@ const Index = () => {
   );
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
+  const [selectedBarIdx, setSelectedBarIdx] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState(false);
+
+  const handleSelectCell = useCallback((cell: SelectedCell | null) => {
+    setSelectedCell(cell);
+    if (cell) setSelectedBarIdx(cell.barIdx);
+  }, []);
+
+  const moveRow = useCallback(
+    (rowIdx: number, direction: -1 | 1) => {
+      // Find all rows by walking bars and grouping by breakBefore
+      const rowStarts: number[] = [];
+      state.bars.forEach((bar, i) => {
+        if (i === 0 || bar.breakBefore) rowStarts.push(i);
+      });
+      const targetIdx = rowIdx + direction;
+      if (targetIdx < 0 || targetIdx >= rowStarts.length) return;
+
+      const rowEnd = (idx: number) =>
+        idx + 1 < rowStarts.length ? rowStarts[idx + 1] : state.bars.length;
+
+      const aStart = rowStarts[Math.min(rowIdx, targetIdx)];
+      const aEnd = rowEnd(Math.min(rowIdx, targetIdx));
+      const bStart = rowStarts[Math.max(rowIdx, targetIdx)];
+      const bEnd = rowEnd(Math.max(rowIdx, targetIdx));
+
+      const before = state.bars.slice(0, aStart);
+      const rowA = state.bars.slice(aStart, aEnd);
+      const rowB = state.bars.slice(bStart, bEnd);
+      const after = state.bars.slice(bEnd);
+
+      // Swap rowA and rowB while preserving breakBefore on row boundaries
+      const swapped = [...before, ...rowB, ...rowA, ...after].map(
+        (bar, i): Bar => {
+          if (i === 0) return { ...bar, breakBefore: true };
+          // The first bar of each moved chunk needs breakBefore=true
+          // (since it's now at a row boundary). Other bars keep their flag.
+          const isNewRowStart =
+            i === before.length || i === before.length + rowB.length;
+          if (isNewRowStart) return { ...bar, breakBefore: true };
+          return bar;
+        },
+      );
+      updateState({ ...state, bars: swapped });
+      setSelectedCell(null);
+      setSelectedBarIdx(null);
+    },
+    [state, updateState],
+  );
   const [loadedName, setLoadedName] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("name") || null;
