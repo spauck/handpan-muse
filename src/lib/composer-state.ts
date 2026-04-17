@@ -1,29 +1,33 @@
-// Each beat: [rightHandNotes[], leftHandNotes[], anyHandNotes[]] where each array holds 0-3 note strings
+// Composition model: a flat array of Bars. Each Bar has its own length (number
+// of beats) and a `breakBefore` flag that begins a new row. The first bar
+// implicitly starts the first row regardless of its flag.
 export type Hand = "right" | "left" | "any" | "none";
 export type Note = { value: string; hand: Hand };
 export type Beat = Note[];
-export type Row = Beat[];
 
-export interface ComposerState {
-  beatsPerBar: number;
-  barsPerRow: number;
-  notesPerCount: number;
-  rows: Row[];
+export interface Bar {
+  beats: Beat[];
+  breakBefore: boolean;
 }
 
+export interface ComposerState {
+  notesPerCount: number;
+  bars: Bar[];
+}
+
+const DEFAULT_BEATS_PER_BAR = 4;
+
 const DEFAULT_STATE: ComposerState = {
-  beatsPerBar: 4,
-  barsPerRow: 2,
   notesPerCount: 1,
-  rows: [[]],
+  bars: [{ beats: emptyBeats(DEFAULT_BEATS_PER_BAR), breakBefore: true }],
 };
 
-const _rowSplit = "|";
 const beatSplit = ".";
 const noteSplit = "-";
+const barSplit = ",";
 
-function initRow(beatsPerBar: number, barsPerRow: number): Row {
-  return Array.from({ length: beatsPerBar * barsPerRow }, () => []);
+function emptyBeats(n: number): Beat[] {
+  return Array.from({ length: n }, () => []);
 }
 
 function encodeBeat(beat: Beat): string {
@@ -38,37 +42,118 @@ function decodeBeat(beatStr: string): Beat {
   }));
 }
 
+/** Encode a single bar: `[len][!]beat.beat.beat` */
+function encodeBar(bar: Bar): string {
+  const head = `${bar.beats.length}${bar.breakBefore ? "!" : ""}`;
+  return head + bar.beats.map(encodeBeat).join(beatSplit);
+}
+
+function decodeBar(barStr: string): Bar | null {
+  const m = barStr.match(/^(\d+)(!?)(.*)$/);
+  if (!m) return null;
+  const len = parseInt(m[1], 10);
+  const breakBefore = m[2] === "!";
+  const rest = m[3];
+  // Split into exactly `len` beats (preserving empties)
+  const beatStrs = rest === "" ? [] : rest.split(beatSplit);
+  const beats: Beat[] = Array.from(
+    { length: len },
+    (_, i): Beat => decodeBeat(beatStrs[i] ?? ""),
+  );
+  return { beats, breakBefore };
+}
+
 export function encodeState(state: ComposerState): string {
-  const rows = state.rows.map((row) => row.map(encodeBeat).join(beatSplit));
-  return `b=${state.beatsPerBar}&r=${state.barsPerRow}&n=${state.notesPerCount}&${rows
-    .map(encodeURIComponent)
-    .map((row) => `d=${row}`)
-    .join("&")}`;
+  const bars = state.bars.map(encodeBar).join(barSplit);
+  const parts = [`n=${state.notesPerCount}`];
+  if (bars) parts.push(`bars=${encodeURIComponent(bars)}`);
+  return parts.join("&");
 }
 
 export function decodeState(search: string): ComposerState {
   const params = new URLSearchParams(search);
-  const b = parseInt(params.get("b") || "", 10);
-  const r = parseInt(params.get("r") || "", 10);
-  const n = parseInt(params.get("n") || "2", 10) || 1;
-  const d = params.getAll("d");
+  const n = parseInt(params.get("n") || "1", 10) || 1;
+  const barsParam = params.get("bars");
 
-  if (!b || !r || !d) {
-    return {
-      ...DEFAULT_STATE,
-      rows: [initRow(DEFAULT_STATE.beatsPerBar, DEFAULT_STATE.barsPerRow)],
-    };
+  if (barsParam) {
+    const bars = barsParam
+      .split(barSplit)
+      .map(decodeBar)
+      .filter((b): b is Bar => b !== null);
+    if (bars.length > 0) {
+      // Ensure the very first bar starts a row.
+      bars[0] = { ...bars[0], breakBefore: true };
+      return { notesPerCount: n, bars };
+    }
   }
 
-  const rows: Row[] = d.map((rowStr) =>
-    rowStr.split(beatSplit).map(decodeBeat),
-  );
+  // ─── BEGIN LEGACY MIGRATION ─────────────────────────────────────────────
+  // Old schema: b=beatsPerBar, r=barsPerRow, d=row (one per row, beats joined
+  // by ".", with each row containing beatsPerBar*barsPerRow beats).
+  // Remove this block once no legacy URLs/saves are in circulation.
+  const legacyB = parseInt(params.get("b") || "", 10);
+  const legacyR = parseInt(params.get("r") || "", 10);
+  const legacyD = params.getAll("d");
+  if (legacyB && legacyR && legacyD.length > 0) {
+    const bars: Bar[] = [];
+    for (const rowStr of legacyD) {
+      const allBeats = rowStr.split(beatSplit).map(decodeBeat);
+      for (let bi = 0; bi < legacyR; bi++) {
+        const beats: Beat[] = Array.from(
+          { length: legacyB },
+          (_, i): Beat => allBeats[bi * legacyB + i] ?? [],
+        );
+        bars.push({ beats, breakBefore: bi === 0 });
+      }
+    }
+    if (bars.length > 0) {
+      bars[0] = { ...bars[0], breakBefore: true };
+      return { notesPerCount: n, bars };
+    }
+  }
+  // ─── END LEGACY MIGRATION ───────────────────────────────────────────────
 
-  return { beatsPerBar: b, barsPerRow: r, notesPerCount: n, rows };
+  return {
+    notesPerCount: n,
+    bars: [{ beats: emptyBeats(DEFAULT_BEATS_PER_BAR), breakBefore: true }],
+  };
 }
 
-export function createEmptyRow(beatsPerBar: number, barsPerRow: number): Row {
-  return initRow(beatsPerBar, barsPerRow);
+/** Group bars into rows by their breakBefore flag. */
+export function groupIntoRows(bars: Bar[]): Array<{ start: number; bars: Bar[] }> {
+  const rows: Array<{ start: number; bars: Bar[] }> = [];
+  bars.forEach((bar, i) => {
+    if (i === 0 || bar.breakBefore) {
+      rows.push({ start: i, bars: [bar] });
+    } else {
+      rows[rows.length - 1].bars.push(bar);
+    }
+  });
+  return rows;
+}
+
+/** Suggested length for a newly-added bar: last bar length, else rounded
+ * average, else DEFAULT_BEATS_PER_BAR. */
+export function nextBarLength(bars: Bar[]): number {
+  if (bars.length === 0) return DEFAULT_BEATS_PER_BAR;
+  const last = bars[bars.length - 1].beats.length;
+  if (last) return last;
+  const total = bars.reduce((s, b) => s + b.beats.length, 0);
+  if (total > 0) return Math.max(1, Math.round(total / bars.length));
+  return DEFAULT_BEATS_PER_BAR;
+}
+
+export function createEmptyBar(length: number, breakBefore = false): Bar {
+  return { beats: emptyBeats(length), breakBefore };
+}
+
+export function resizeBar(bar: Bar, length: number): Bar {
+  if (length < 1) return bar;
+  const beats: Beat[] = Array.from(
+    { length },
+    (_, i): Beat => bar.beats[i] ?? [],
+  );
+  return { ...bar, beats };
 }
 
 export const shortHand: Record<string, Hand> = {
@@ -85,4 +170,4 @@ export const handShort: Record<Hand, string> = {
   none: "n",
 };
 
-export { DEFAULT_STATE };
+export { DEFAULT_STATE, DEFAULT_BEATS_PER_BAR };
