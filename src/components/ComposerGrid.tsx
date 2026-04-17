@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
 
-import { ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Fragment } from "react";
 import type { Bar } from "@/lib/composer-state";
 import { groupIntoRows } from "@/lib/composer-state";
@@ -16,7 +16,9 @@ interface ComposerGridProps {
   notesPerCount: number;
   viewMode?: boolean;
   selectedCell: SelectedCell | null;
+  selectedBarIdx: number | null;
   onSelectCell: (cell: SelectedCell | null) => void;
+  onSelectBar: (barIdx: number | null) => void;
   onDeleteBar: (barIdx: number) => void;
   onChangeBarLength: (barIdx: number, delta: number) => void;
   onSetBreak: (barIdx: number, breakBefore: boolean) => void;
@@ -25,6 +27,7 @@ interface ComposerGridProps {
     currentBar: Bar,
     where: "before" | "after",
   ) => void;
+  onMoveRow: (rowIdx: number, direction: -1 | 1) => void;
 }
 
 export function ComposerGrid({
@@ -32,11 +35,14 @@ export function ComposerGrid({
   notesPerCount,
   viewMode,
   selectedCell,
+  selectedBarIdx,
   onSelectCell,
+  onSelectBar,
   onDeleteBar,
   onChangeBarLength,
   onSetBreak,
   onAddBar,
+  onMoveRow,
 }: ComposerGridProps) {
   const handleSelect = (barIdx: number, beatIdx: number) => {
     if (viewMode) return;
@@ -87,8 +93,28 @@ export function ComposerGrid({
             className="bg-card rounded-lg px-3 pt-2 pb-1 sm:px-4 border border-border relative"
           >
             {!viewMode && (
-              <div className="text-[10px] text-muted-foreground mb-1 font-mono flex items-center gap-2">
+              <div className="text-[10px] text-muted-foreground mb-1 font-mono flex items-center gap-2 flex-wrap">
                 <span>Row {rowIdx + 1}</span>
+                {rowIdx > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => onMoveRow(rowIdx, -1)}
+                    className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
+                    title="Move row up"
+                  >
+                    <ChevronUp size={12} /> up
+                  </button>
+                )}
+                {rowIdx < rows.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={() => onMoveRow(rowIdx, 1)}
+                    className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
+                    title="Move row down"
+                  >
+                    <ChevronDown size={12} /> down
+                  </button>
+                )}
                 {rowIdx > 0 && (
                   <button
                     type="button"
@@ -116,10 +142,17 @@ export function ComposerGrid({
                     viewMode={viewMode}
                     isFirstInRow={bi === 0}
                     canDelete={bars.length > 1}
+                    isSelected={
+                      selectedBarIdx === barIdx ||
+                      selectedCell?.barIdx === barIdx
+                    }
                     selectedBeatIdx={
                       selectedCell?.barIdx === barIdx
                         ? selectedCell.beatIdx
                         : null
+                    }
+                    onSelectBar={() =>
+                      onSelectBar(selectedBarIdx === barIdx ? null : barIdx)
                     }
                     onSelectBeat={(beatIdx) => handleSelect(barIdx, beatIdx)}
                     onDeleteBar={() => onDeleteBar(barIdx)}
