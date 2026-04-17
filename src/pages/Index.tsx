@@ -81,7 +81,14 @@ const Index = () => {
   );
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
+  const [selectedBarIdx, setSelectedBarIdx] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState(false);
+
+  const handleSelectCell = useCallback((cell: SelectedCell | null) => {
+    setSelectedCell(cell);
+    if (cell) setSelectedBarIdx(cell.barIdx);
+  }, []);
+
   const [loadedName, setLoadedName] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("name") || null;
@@ -143,6 +150,51 @@ const Index = () => {
       setSearchParams(encodeState(newState), { replace: true });
     },
     [setSearchParams],
+  );
+
+  const moveRow = useCallback(
+    (rowIdx: number, direction: -1 | 1) => {
+      const rowStarts: number[] = [];
+      state.bars.forEach((bar, i) => {
+        if (i === 0 || bar.breakBefore) rowStarts.push(i);
+      });
+      const targetIdx = rowIdx + direction;
+      if (targetIdx < 0 || targetIdx >= rowStarts.length) return;
+
+      const rowEnd = (idx: number) =>
+        idx + 1 < rowStarts.length ? rowStarts[idx + 1] : state.bars.length;
+
+      const aIdx = Math.min(rowIdx, targetIdx);
+      const bIdx = Math.max(rowIdx, targetIdx);
+      const aStart = rowStarts[aIdx];
+      const aEnd = rowEnd(aIdx);
+      const bStart = rowStarts[bIdx];
+      const bEnd = rowEnd(bIdx);
+
+      const before = state.bars.slice(0, aStart);
+      const rowA = state.bars.slice(aStart, aEnd);
+      const rowB = state.bars.slice(bStart, bEnd);
+      const after = state.bars.slice(bEnd);
+
+      const swapped = [...before, ...rowB, ...rowA, ...after].map(
+        (bar, i): Bar => {
+          // First bar overall, and the first bar of each swapped chunk,
+          // need breakBefore=true to preserve row boundaries.
+          if (
+            i === 0 ||
+            i === before.length ||
+            i === before.length + rowB.length
+          ) {
+            return { ...bar, breakBefore: true };
+          }
+          return bar;
+        },
+      );
+      updateState({ ...state, bars: swapped });
+      setSelectedCell(null);
+      setSelectedBarIdx(null);
+    },
+    [state, updateState],
   );
 
   const activeNotes = useMemo<Array<{ value: string; hand: Hand }>>(() => {
@@ -486,11 +538,14 @@ const Index = () => {
             notesPerCount={state.notesPerCount}
             viewMode={viewMode}
             selectedCell={selectedCell}
-            onSelectCell={setSelectedCell}
+            selectedBarIdx={selectedBarIdx}
+            onSelectCell={handleSelectCell}
+            onSelectBar={setSelectedBarIdx}
             onDeleteBar={deleteBar}
             onChangeBarLength={changeBarLength}
             onSetBreak={setBreak}
             onAddBar={addBar}
+            onMoveRow={moveRow}
           />
         </div>
       </div>
