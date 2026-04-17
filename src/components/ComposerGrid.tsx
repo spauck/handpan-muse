@@ -1,6 +1,7 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
 
 import { ChevronUp } from "lucide-react";
+import { Fragment } from "react";
 import type { Bar } from "@/lib/composer-state";
 import { groupIntoRows } from "@/lib/composer-state";
 import { BarColumn } from "./BarColumn";
@@ -109,9 +110,8 @@ export function ComposerGrid({
               style={{ gridTemplateColumns: gridTemplate }}
             >
               {rowBars.map(({ bar, barIdx }, bi) => (
-                <>
+                <Fragment key={`bar-wrap-${barIdx}`}>
                   <BarColumn
-                    key={`bar-${barIdx}`}
                     bar={bar}
                     barIdx={barIdx}
                     startCount={startCounts[bi]}
@@ -135,12 +135,9 @@ export function ComposerGrid({
                     onAddBar={(where) => onAddBar(barIdx, bar, where)}
                   />
                   {bi < rowBars.length - 1 && (
-                    <div
-                      key={`div-${barIdx}`}
-                      className="w-px bg-bar-divider mx-0.5 self-stretch"
-                    />
+                    <div className="w-px bg-bar-divider mx-0.5 self-stretch" />
                   )}
-                </>
+                </Fragment>
               ))}
             </div>
 
