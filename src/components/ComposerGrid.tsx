@@ -1,6 +1,14 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
 
-import { ChevronUp, CornerDownLeft, Minus, Plus, Trash2 } from "lucide-react";
+import {
+  ChevronUp,
+  CircleMinus,
+  CirclePlus,
+  CornerDownLeft,
+  PanelLeftOpen,
+  PanelRightOpen,
+  Trash2,
+} from "lucide-react";
 import type { Bar } from "@/lib/composer-state";
 import { groupIntoRows } from "@/lib/composer-state";
 import { BeatCell } from "./BeatCell";
@@ -19,6 +27,11 @@ interface ComposerGridProps {
   onDeleteBar: (barIdx: number) => void;
   onChangeBarLength: (barIdx: number, delta: number) => void;
   onSetBreak: (barIdx: number, breakBefore: boolean) => void;
+  onAddBar: (
+    position: number,
+    currentBar: Bar,
+    where: "before" | "after",
+  ) => void;
 }
 
 function getCountLabels(beatNumber: number, notesPerCount: number): string[] {
@@ -46,6 +59,7 @@ export function ComposerGrid({
   onDeleteBar,
   onChangeBarLength,
   onSetBreak,
+  onAddBar,
 }: ComposerGridProps) {
   const isSelected = (barIdx: number, beatIdx: number) =>
     !viewMode &&
@@ -89,7 +103,7 @@ export function ComposerGrid({
         return (
           <div
             key={rowIdx}
-            className="bg-card rounded-lg p-3 sm:p-4 border border-border group relative"
+            className="bg-card rounded-lg px-3 pt-2 pb-1 sm:px-4 border border-border group relative"
           >
             {!viewMode && (
               <div className="text-[10px] text-muted-foreground mb-1 font-mono flex items-center gap-2">
@@ -176,7 +190,7 @@ export function ComposerGrid({
             {/* Per-bar controls */}
             {!viewMode && (
               <div
-                className="grid w-full mt-1.5"
+                className="grid w-full"
                 style={{ gridTemplateColumns: gridTemplate }}
               >
                 {rowBars.map(({ bar, barIdx }, bi) => {
@@ -184,28 +198,16 @@ export function ComposerGrid({
                   cells.push(
                     <div
                       key={`ctrl-${barIdx}`}
-                      className="flex items-center justify-center gap-0.5 opacity-50 group-hover:opacity-100 transition-opacity"
+                      className="flex items-center justify-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                       style={{ gridColumn: `span ${bar.beats.length}` }}
                     >
-                      <span className="text-[9px] font-mono text-muted-foreground mr-1">
-                        Bar {barIdx + 1} · {bar.beats.length}
-                      </span>
                       <button
                         type="button"
-                        onClick={() => onChangeBarLength(barIdx, -1)}
+                        onClick={() => onAddBar(barIdx, bar, "before")}
                         className="text-muted-foreground hover:text-foreground p-0.5"
-                        title="Shorten bar"
-                        disabled={bar.beats.length <= 1}
+                        title="Add bar before"
                       >
-                        <Minus size={11} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onChangeBarLength(barIdx, +1)}
-                        className="text-muted-foreground hover:text-foreground p-0.5"
-                        title="Lengthen bar"
-                      >
-                        <Plus size={11} />
+                        <PanelRightOpen size={11} />
                       </button>
                       {barIdx > 0 && !bar.breakBefore && (
                         <button
@@ -217,6 +219,23 @@ export function ComposerGrid({
                           <CornerDownLeft size={11} />
                         </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => onChangeBarLength(barIdx, -1)}
+                        className="text-muted-foreground hover:text-foreground p-0.5"
+                        title="Shorten bar"
+                        disabled={bar.beats.length <= 1}
+                      >
+                        <CircleMinus size={11} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onChangeBarLength(barIdx, +1)}
+                        className="text-muted-foreground hover:text-foreground p-0.5"
+                        title="Lengthen bar"
+                      >
+                        <CirclePlus size={11} />
+                      </button>
                       {bars.length > 1 && (
                         <button
                           type="button"
@@ -227,6 +246,14 @@ export function ComposerGrid({
                           <Trash2 size={11} />
                         </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => onAddBar(barIdx, bar, "after")}
+                        className="text-muted-foreground hover:text-foreground p-0.5"
+                        title="Add bar after"
+                      >
+                        <PanelLeftOpen size={11} />
+                      </button>
                     </div>,
                   );
                   if (bi < rowBars.length - 1) {

@@ -1,6 +1,7 @@
-// Composition model: a flat array of Bars. Each Bar has its own length (number
-// of beats) and a `breakBefore` flag that begins a new row. The first bar
-// implicitly starts the first row regardless of its flag.
+// Composition model: a flat array of Bars.
+// Each Bar may have a `breakBefore` flag that begins a new row.
+// The first bar implicitly starts the first row regardless of its flag.
+// Encoding should try to only use URL-safe characters, and be as compact as possible while still being somewhat human-readable.
 export type Hand = "right" | "left" | "any" | "none";
 export type Note = { value: string; hand: Hand };
 export type Beat = Note[];
@@ -24,7 +25,8 @@ const DEFAULT_STATE: ComposerState = {
 
 const beatSplit = ".";
 const noteSplit = "-";
-const barSplit = ",";
+const barSplit = "_";
+const breakBeforeFlag = "B";
 
 function emptyBeats(n: number): Beat[] {
   return Array.from({ length: n }, () => []);
@@ -42,24 +44,20 @@ function decodeBeat(beatStr: string): Beat {
   }));
 }
 
-/** Encode a single bar: `[len][!]beat.beat.beat` */
+/** Encode a single bar: `[B]beat.beat.beat` */
 function encodeBar(bar: Bar): string {
-  const head = `${bar.beats.length}${bar.breakBefore ? "!" : ""}`;
+  const head = `${bar.breakBefore ? breakBeforeFlag : ""}`;
   return head + bar.beats.map(encodeBeat).join(beatSplit);
 }
 
 function decodeBar(barStr: string): Bar | null {
-  const m = barStr.match(/^(\d+)(!?)(.*)$/);
+  const m = barStr.match(/^\d*([!B]?)(.*)$/);
   if (!m) return null;
-  const len = parseInt(m[1], 10);
-  const breakBefore = m[2] === "!";
-  const rest = m[3];
-  // Split into exactly `len` beats (preserving empties)
+  // Should be `const breakBefore = m[1] === breakBeforeFlag`, but allow "!" for legacy URLs that used it by mistake.
+  const breakBefore = m[1] !== "";
+  const rest = m[2];
   const beatStrs = rest === "" ? [] : rest.split(beatSplit);
-  const beats: Beat[] = Array.from(
-    { length: len },
-    (_, i): Beat => decodeBeat(beatStrs[i] ?? ""),
-  );
+  const beats: Beat[] = beatStrs.map(decodeBeat);
   return { beats, breakBefore };
 }
 
@@ -72,12 +70,12 @@ export function encodeState(state: ComposerState): string {
 
 export function decodeState(search: string): ComposerState {
   const params = new URLSearchParams(search);
-  const n = parseInt(params.get("n") || "1", 10) || 1;
+  const n = parseInt(params.get("n") || "2", 10) || 2;
   const barsParam = params.get("bars");
 
   if (barsParam) {
     const bars = barsParam
-      .split(barSplit)
+      .split(/[_,]/)
       .map(decodeBar)
       .filter((b): b is Bar => b !== null);
     if (bars.length > 0) {
@@ -120,7 +118,9 @@ export function decodeState(search: string): ComposerState {
 }
 
 /** Group bars into rows by their breakBefore flag. */
-export function groupIntoRows(bars: Bar[]): Array<{ start: number; bars: Bar[] }> {
+export function groupIntoRows(
+  bars: Bar[],
+): Array<{ start: number; bars: Bar[] }> {
   const rows: Array<{ start: number; bars: Bar[] }> = [];
   bars.forEach((bar, i) => {
     if (i === 0 || bar.breakBefore) {

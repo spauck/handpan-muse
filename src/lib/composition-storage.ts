@@ -1,3 +1,5 @@
+import { decodeState, encodeState } from "./composer-state";
+
 export interface SavedComposition {
   name: string;
   queryString: string;
@@ -50,7 +52,11 @@ export function importCompositions(json: string, overwrite = false): number {
   for (const comp of incoming) {
     if (!comp.name || !comp.queryString) continue;
     if (!map.has(comp.name) || overwrite) {
-      map.set(comp.name, comp);
+      // Re-encode to ensure compatibility with current version
+      map.set(comp.name, {
+        ...comp,
+        queryString: encodeState(decodeState(comp.queryString)),
+      });
       count++;
     }
   }
