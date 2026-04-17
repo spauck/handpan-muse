@@ -2,21 +2,21 @@
 
 import { Eraser } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { Beat, Hand, Row } from "@/lib/composer-state";
+import type { Bar, Beat, Hand } from "@/lib/composer-state";
 import { handColorClass, useSettings } from "@/lib/settings";
 import { handColor } from "./handColor";
 import { NoteGlyph } from "./NoteGlyph";
 import { getNotes } from "./Notes";
 
 interface SelectedCell {
-  rowIdx: number;
+  barIdx: number;
   beatIdx: number;
 }
 
 interface PositionKeyboardProps {
   selectedCell: SelectedCell | null;
   activeNotes: Array<{ value: string; hand: Hand }>;
-  rows: Row[];
+  bars: Bar[];
   onAssignNote: (value: string, hand: Hand) => void;
   onRemoveNote: (value: string) => void;
   onClearAll: () => void;
@@ -45,10 +45,10 @@ function serializeChord(notes: Array<{ value: string; hand: Hand }>): string {
     .join("|");
 }
 
-function extractChords(rows: Row[]): Chord[] {
+function extractChords(bars: Bar[]): Chord[] {
   const seen = new Map<string, Chord>();
-  for (const row of rows) {
-    for (const notes of row) {
+  for (const bar of bars) {
+    for (const notes of bar.beats) {
       if (notes.length < 2) continue;
       const key = serializeChord(notes);
       if (!seen.has(key)) {
@@ -62,7 +62,7 @@ function extractChords(rows: Row[]): Chord[] {
 export function PositionKeyboard({
   selectedCell,
   activeNotes,
-  rows,
+  bars,
   onAssignNote,
   onRemoveNote,
   onClearAll,
@@ -72,7 +72,7 @@ export function PositionKeyboard({
   const [tab, setTab] = useState<KeyboardTab>("notes");
   const [lastHand, setLastHand] = useState<Hand>("right");
 
-  const chords = useMemo(() => extractChords(rows), [rows]);
+  const chords = useMemo(() => extractChords(bars), [bars]);
 
   if (!selectedCell) return null;
 
@@ -105,7 +105,7 @@ export function PositionKeyboard({
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-1 mb-1.5">
           <span className="text-[10px] text-muted-foreground">
-            Row {selectedCell.rowIdx + 1}, Beat {selectedCell.beatIdx + 1}
+            Bar {selectedCell.barIdx + 1}, Beat {selectedCell.beatIdx + 1}
           </span>
           {totalNotes > 0 && (
             <span className="text-[10px] text-muted-foreground ml-1">
