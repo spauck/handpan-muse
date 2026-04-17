@@ -20,7 +20,9 @@ interface BarColumnProps {
   viewMode?: boolean;
   isFirstInRow: boolean;
   canDelete: boolean;
+  isSelected: boolean;
   selectedBeatIdx: number | null;
+  onSelectBar: () => void;
   onSelectBeat: (beatIdx: number) => void;
   onDeleteBar: () => void;
   onChangeBarLength: (delta: number) => void;
