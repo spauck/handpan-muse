@@ -26,12 +26,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  type Bar,
   type Beat,
   type ComposerState,
-  createEmptyRow,
+  createEmptyBar,
   decodeState,
   encodeState,
   type Hand,
+  nextBarLength,
+  resizeBar,
 } from "@/lib/composer-state";
 import {
   applyColorVars,
@@ -43,7 +46,7 @@ import {
 import { applyTheme, loadTheme } from "@/lib/theme";
 
 interface SelectedCell {
-  rowIdx: number;
+  barIdx: number;
   beatIdx: number;
 }
 
@@ -80,7 +83,6 @@ const Index = () => {
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
   const [viewMode, setViewMode] = useState(false);
-  // Read name from URL on init
   const [loadedName, setLoadedName] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("name") || null;
@@ -146,110 +148,148 @@ const Index = () => {
 
   const activeNotes = useMemo<Array<{ value: string; hand: Hand }>>(() => {
     if (!selectedCell) return [];
-    return state.rows[selectedCell.rowIdx]?.[selectedCell.beatIdx] ?? [];
+    return state.bars[selectedCell.barIdx]?.beats[selectedCell.beatIdx] ?? [];
   }, [selectedCell, state]);
+
+  const mapSelectedBeat = useCallback(
+    (transform: (beat: Beat) => Beat): Bar[] => {
+      if (!selectedCell) return state.bars;
+      const { barIdx, beatIdx } = selectedCell;
+      return state.bars.map((bar, bi): Bar => {
+        if (bi !== barIdx) return bar;
+        return {
+          ...bar,
+          beats: bar.beats.map((beat, idx): Beat =>
+            idx !== beatIdx ? beat : transform(beat),
+          ),
+        };
+      });
+    },
+    [selectedCell, state.bars],
+  );
+
+  const advanceSelection = useCallback(() => {
+    if (!selectedCell) return;
+    const { barIdx, beatIdx } = selectedCell;
+    const bar = state.bars[barIdx];
+    if (!bar) return;
+    if (beatIdx + 1 < bar.beats.length) {
+      setSelectedCell({ barIdx, beatIdx: beatIdx + 1 });
+    } else if (barIdx + 1 < state.bars.length) {
+      setSelectedCell({ barIdx: barIdx + 1, beatIdx: 0 });
+    }
+  }, [selectedCell, state.bars]);
 
   const handleAssignNote = useCallback(
     (value: string, hand: Hand) => {
       if (!selectedCell) return;
-      const { rowIdx, beatIdx } = selectedCell;
-      const totalBeats = state.beatsPerBar * state.barsPerRow;
-
-      const newRows = state.rows.map((row, ri): Beat[] => {
-        if (ri !== rowIdx) return row;
-        return row.map((beat, bi): Beat => {
-          if (bi !== beatIdx) return beat;
-          return [...beat.filter((n) => n.value !== value), { value, hand }];
-        });
-      });
-
       const wasEmpty = activeNotes.length === 0;
-      updateState({ ...state, rows: newRows });
-
-      if (wasEmpty && beatIdx + 1 < totalBeats) {
-        setSelectedCell({ rowIdx, beatIdx: beatIdx + 1 });
-      }
+      const newBars = mapSelectedBeat((beat) => [
+        ...beat.filter((n) => n.value !== value),
+        { value, hand },
+      ]);
+      updateState({ ...state, bars: newBars });
+      if (wasEmpty) advanceSelection();
     },
-    [selectedCell, state, updateState, activeNotes],
+    [selectedCell, state, updateState, activeNotes, mapSelectedBeat, advanceSelection],
   );
 
   const handleRemoveNote = useCallback(
     (value: string) => {
       if (!selectedCell) return;
-      const { rowIdx, beatIdx } = selectedCell;
-      const newRows = state.rows.map((row, ri): Beat[] => {
-        if (ri !== rowIdx) return row;
-        return row.map((beat, bi): Beat => {
-          if (bi !== beatIdx) return beat;
-          return beat.filter((n) => n.value !== value);
-        });
-      });
-      updateState({ ...state, rows: newRows });
+      const newBars = mapSelectedBeat((beat) =>
+        beat.filter((n) => n.value !== value),
+      );
+      updateState({ ...state, bars: newBars });
     },
-    [selectedCell, state, updateState],
+    [selectedCell, state, updateState, mapSelectedBeat],
   );
 
   const handleClearAll = useCallback(() => {
     if (!selectedCell) return;
-    const { rowIdx, beatIdx } = selectedCell;
-    const newRows = state.rows.map((row, ri): Beat[] => {
-      if (ri !== rowIdx) return row;
-      return row.map((beat, bi): Beat => {
-        if (bi !== beatIdx) return beat;
-        return [];
-      });
-    });
-    updateState({ ...state, rows: newRows });
-  }, [selectedCell, state, updateState]);
+    const newBars = mapSelectedBeat(() => []);
+    updateState({ ...state, bars: newBars });
+  }, [selectedCell, state, updateState, mapSelectedBeat]);
 
   const handleSetBeat = useCallback(
     (beat: Beat) => {
       if (!selectedCell) return;
-      const { rowIdx, beatIdx } = selectedCell;
-      const totalBeats = state.beatsPerBar * state.barsPerRow;
-      const newRows = state.rows.map((row, ri): Beat[] => {
-        if (ri !== rowIdx) return row;
-        return row.map((b, bi): Beat => (bi !== beatIdx ? b : beat));
-      });
       const wasEmpty = activeNotes.length === 0;
-      updateState({ ...state, rows: newRows });
-      if (wasEmpty && beatIdx + 1 < totalBeats) {
-        setSelectedCell({ rowIdx, beatIdx: beatIdx + 1 });
-      }
+      const newBars = mapSelectedBeat(() => beat);
+      updateState({ ...state, bars: newBars });
+      if (wasEmpty) advanceSelection();
     },
-    [selectedCell, state, updateState, activeNotes],
+    [selectedCell, state, updateState, activeNotes, mapSelectedBeat, advanceSelection],
   );
 
-  const addRow = useCallback(() => {
+  const addBar = useCallback(() => {
+    const length = nextBarLength(state.bars);
     updateState({
       ...state,
-      rows: [
-        ...state.rows,
-        createEmptyRow(state.beatsPerBar, state.barsPerRow),
-      ],
+      bars: [...state.bars, createEmptyBar(length, false)],
     });
   }, [state, updateState]);
 
-  const deleteRow = useCallback(
+  const addRow = useCallback(() => {
+    const length = nextBarLength(state.bars);
+    updateState({
+      ...state,
+      bars: [...state.bars, createEmptyBar(length, true)],
+    });
+  }, [state, updateState]);
+
+  const deleteBar = useCallback(
     (idx: number) => {
-      if (state.rows.length <= 1) return;
-      updateState({ ...state, rows: state.rows.filter((_, i) => i !== idx) });
-      if (selectedCell?.rowIdx === idx) setSelectedCell(null);
+      if (state.bars.length <= 1) return;
+      const newBars = state.bars
+        .filter((_, i) => i !== idx)
+        .map((bar, i): Bar => (i === 0 ? { ...bar, breakBefore: true } : bar));
+      updateState({ ...state, bars: newBars });
+      if (selectedCell?.barIdx === idx) setSelectedCell(null);
+      else if (selectedCell && selectedCell.barIdx > idx)
+        setSelectedCell({
+          ...selectedCell,
+          barIdx: selectedCell.barIdx - 1,
+        });
     },
     [state, updateState, selectedCell],
   );
 
-  const handleConfigChange = useCallback(
-    (field: "beatsPerBar" | "barsPerRow" | "notesPerCount", val: number) => {
-      if (val < 1 || val > 16) return;
-      const newState = { ...state, [field]: val };
-      if (field !== "notesPerCount") {
-        const totalBeats = newState.beatsPerBar * newState.barsPerRow;
-        newState.rows = newState.rows.map((row) =>
-          Array.from({ length: totalBeats }, (_, i): Beat => row[i] ?? []),
-        );
+  const changeBarLength = useCallback(
+    (idx: number, delta: number) => {
+      const bar = state.bars[idx];
+      if (!bar) return;
+      const newLen = bar.beats.length + delta;
+      if (newLen < 1 || newLen > 32) return;
+      const newBars = state.bars.map((b, i) =>
+        i === idx ? resizeBar(b, newLen) : b,
+      );
+      updateState({ ...state, bars: newBars });
+      if (
+        selectedCell?.barIdx === idx &&
+        selectedCell.beatIdx >= newLen
+      ) {
+        setSelectedCell({ barIdx: idx, beatIdx: newLen - 1 });
       }
-      updateState(newState);
+    },
+    [state, updateState, selectedCell],
+  );
+
+  const setBreak = useCallback(
+    (idx: number, breakBefore: boolean) => {
+      if (idx === 0) return; // first bar always starts a row
+      const newBars = state.bars.map((b, i) =>
+        i === idx ? { ...b, breakBefore } : b,
+      );
+      updateState({ ...state, bars: newBars });
+    },
+    [state, updateState],
+  );
+
+  const handleNotesPerCountChange = useCallback(
+    (val: number) => {
+      if (val < 1 || val > 16) return;
+      updateState({ ...state, notesPerCount: val });
     },
     [state, updateState],
   );
@@ -395,52 +435,11 @@ const Index = () => {
           {!viewMode && (
             <div className="flex flex-wrap items-center gap-4 mb-5 bg-card rounded-lg p-3 border border-border">
               <label className="flex items-center gap-2 text-sm text-secondary-foreground">
-                <span className="text-muted-foreground">Beats/bar</span>
-                <select
-                  value={state.beatsPerBar}
-                  onChange={(e) =>
-                    handleConfigChange(
-                      "beatsPerBar",
-                      parseInt(e.target.value, 10),
-                    )
-                  }
-                  className="bg-secondary text-foreground rounded px-2 py-1 text-sm font-mono border border-border"
-                >
-                  {[2, 3, 4, 5, 6, 7, 8].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex items-center gap-2 text-sm text-secondary-foreground">
-                <span className="text-muted-foreground">Bars/row</span>
-                <select
-                  value={state.barsPerRow}
-                  onChange={(e) =>
-                    handleConfigChange(
-                      "barsPerRow",
-                      parseInt(e.target.value, 10),
-                    )
-                  }
-                  className="bg-secondary text-foreground rounded px-2 py-1 text-sm font-mono border border-border"
-                >
-                  {[1, 2, 3, 4].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex items-center gap-2 text-sm text-secondary-foreground">
                 <span className="text-muted-foreground">Notes/count</span>
                 <select
                   value={state.notesPerCount}
                   onChange={(e) =>
-                    handleConfigChange(
-                      "notesPerCount",
-                      parseInt(e.target.value, 10),
-                    )
+                    handleNotesPerCountChange(parseInt(e.target.value, 10))
                   }
                   className="bg-secondary text-foreground rounded px-2 py-1 text-sm font-mono border border-border"
                 >
@@ -451,29 +450,43 @@ const Index = () => {
                   ))}
                 </select>
               </label>
+              <span className="text-xs text-muted-foreground">
+                Bar length is configured per bar below.
+              </span>
             </div>
           )}
 
           {/* Grid */}
           <ComposerGrid
-            rows={state.rows}
-            beatsPerBar={state.beatsPerBar}
+            bars={state.bars}
             notesPerCount={state.notesPerCount}
             viewMode={viewMode}
             selectedCell={selectedCell}
             onSelectCell={setSelectedCell}
-            onDeleteRow={deleteRow}
+            onDeleteBar={deleteBar}
+            onChangeBarLength={changeBarLength}
+            onSetBreak={setBreak}
           />
 
           {!viewMode && (
-            <button
-              type="button"
-              onClick={addRow}
-              className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Add row
-            </button>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={addBar}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add bar
+              </button>
+              <button
+                type="button"
+                onClick={addRow}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add bar on new row
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -482,7 +495,7 @@ const Index = () => {
         <PositionKeyboard
           selectedCell={selectedCell}
           activeNotes={activeNotes}
-          rows={state.rows}
+          bars={state.bars}
           onAssignNote={handleAssignNote}
           onRemoveNote={handleRemoveNote}
           onClearAll={handleClearAll}

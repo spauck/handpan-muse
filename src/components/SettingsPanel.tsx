@@ -35,8 +35,9 @@ export function SettingsPanel() {
     setTheme(next);
   };
 
-  const getPresetHsl = (preset: (typeof COLOR_PRESETS)[number]) =>
-    "hsl" in preset ? preset.hsl : isDark ? preset.hslDark : preset.hslLight;
+  const getPresetHsl = (preset: (typeof COLOR_PRESETS)[number]) => preset.hsl;
+  // theme is read just to re-render swatch active state when needed
+  void isDark;
 
   const setColor = (
     hand: "rightHandColor" | "leftHandColor" | "anyHandColor",
