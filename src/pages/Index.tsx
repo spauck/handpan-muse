@@ -7,7 +7,6 @@ import {
   Link,
   Menu,
   Pencil,
-  Plus,
   RotateCcw,
   Save,
   Upload,
@@ -159,8 +158,8 @@ const Index = () => {
         if (bi !== barIdx) return bar;
         return {
           ...bar,
-          beats: bar.beats.map((beat, idx): Beat =>
-            idx !== beatIdx ? beat : transform(beat),
+          beats: bar.beats.map(
+            (beat, idx): Beat => (idx !== beatIdx ? beat : transform(beat)),
           ),
         };
       });
@@ -191,7 +190,14 @@ const Index = () => {
       updateState({ ...state, bars: newBars });
       if (wasEmpty) advanceSelection();
     },
-    [selectedCell, state, updateState, activeNotes, mapSelectedBeat, advanceSelection],
+    [
+      selectedCell,
+      state,
+      updateState,
+      activeNotes,
+      mapSelectedBeat,
+      advanceSelection,
+    ],
   );
 
   const handleRemoveNote = useCallback(
@@ -219,31 +225,52 @@ const Index = () => {
       updateState({ ...state, bars: newBars });
       if (wasEmpty) advanceSelection();
     },
-    [selectedCell, state, updateState, activeNotes, mapSelectedBeat, advanceSelection],
+    [
+      selectedCell,
+      state,
+      updateState,
+      activeNotes,
+      mapSelectedBeat,
+      advanceSelection,
+    ],
   );
 
-  const addBar = useCallback(() => {
-    const length = nextBarLength(state.bars);
-    updateState({
-      ...state,
-      bars: [...state.bars, createEmptyBar(length, false)],
-    });
-  }, [state, updateState]);
-
-  const addRow = useCallback(() => {
-    const length = nextBarLength(state.bars);
-    updateState({
-      ...state,
-      bars: [...state.bars, createEmptyBar(length, true)],
-    });
-  }, [state, updateState]);
+  const addBar = useCallback(
+    (position: number, currentBar: Bar, where: "before" | "after") => {
+      const length = nextBarLength(state.bars);
+      const newBar = createEmptyBar(
+        length,
+        where === "before" && currentBar.breakBefore,
+      );
+      const replacementBar = {
+        ...currentBar,
+        breakBefore: where === "after" && currentBar.breakBefore,
+      };
+      updateState({
+        ...state,
+        bars: [
+          ...state.bars.slice(0, position),
+          where === "before" ? newBar : replacementBar,
+          where === "after" ? newBar : replacementBar,
+          ...state.bars.slice(position + 1),
+        ],
+      });
+    },
+    [state, updateState],
+  );
 
   const deleteBar = useCallback(
     (idx: number) => {
       if (state.bars.length <= 1) return;
+      const breakBefore = state.bars[idx].breakBefore;
       const newBars = state.bars
         .filter((_, i) => i !== idx)
-        .map((bar, i): Bar => (i === 0 ? { ...bar, breakBefore: true } : bar));
+        .map(
+          (bar, i): Bar =>
+            i === 0 || (i === idx && breakBefore)
+              ? { ...bar, breakBefore: true }
+              : bar,
+        );
       updateState({ ...state, bars: newBars });
       if (selectedCell?.barIdx === idx) setSelectedCell(null);
       else if (selectedCell && selectedCell.barIdx > idx)
@@ -265,10 +292,7 @@ const Index = () => {
         i === idx ? resizeBar(b, newLen) : b,
       );
       updateState({ ...state, bars: newBars });
-      if (
-        selectedCell?.barIdx === idx &&
-        selectedCell.beatIdx >= newLen
-      ) {
+      if (selectedCell?.barIdx === idx && selectedCell.beatIdx >= newLen) {
         setSelectedCell({ barIdx: idx, beatIdx: newLen - 1 });
       }
     },
@@ -466,28 +490,8 @@ const Index = () => {
             onDeleteBar={deleteBar}
             onChangeBarLength={changeBarLength}
             onSetBreak={setBreak}
+            onAddBar={addBar}
           />
-
-          {!viewMode && (
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={addBar}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Add bar
-              </button>
-              <button
-                type="button"
-                onClick={addRow}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Add bar on new row
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
