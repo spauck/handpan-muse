@@ -1,10 +1,11 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
 
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { Fragment } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import type { Bar } from "@/lib/composer-state";
 import { groupIntoRows } from "@/lib/composer-state";
 import { BarColumn } from "./BarColumn";
+import { BarControlStrip } from "./BarControlStrip";
 
 interface SelectedCell {
   barIdx: number;
@@ -16,9 +17,7 @@ interface ComposerGridProps {
   notesPerCount: number;
   viewMode?: boolean;
   selectedCell: SelectedCell | null;
-  selectedBarIdx: number | null;
   onSelectCell: (cell: SelectedCell | null) => void;
-  onSelectBar: (barIdx: number | null) => void;
   onDeleteBar: (barIdx: number) => void;
   onChangeBarLength: (barIdx: number, delta: number) => void;
   onSetBreak: (barIdx: number, breakBefore: boolean) => void;
@@ -35,15 +34,39 @@ export function ComposerGrid({
   notesPerCount,
   viewMode,
   selectedCell,
-  selectedBarIdx,
   onSelectCell,
-  onSelectBar,
   onDeleteBar,
   onChangeBarLength,
   onSetBreak,
   onAddBar,
   onMoveRow,
 }: ComposerGridProps) {
+  // Only one bar's controls can be open at a time across the whole grid.
+  const [openBarIdx, setOpenBarIdx] = useState<number | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  // Dismiss open controls when tapping anywhere outside the grid.
+  useEffect(() => {
+    if (openBarIdx === null) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        gridRef.current &&
+        !gridRef.current.contains(e.target as Node)
+      ) {
+        setOpenBarIdx(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [openBarIdx]);
+
+  // Close controls if the open bar gets removed.
+  useEffect(() => {
+    if (openBarIdx !== null && openBarIdx >= bars.length) {
+      setOpenBarIdx(null);
+    }
+  }, [bars.length, openBarIdx]);
+
   const handleSelect = (barIdx: number, beatIdx: number) => {
     if (viewMode) return;
     if (selectedCell?.barIdx === barIdx && selectedCell?.beatIdx === beatIdx) {
@@ -56,7 +79,7 @@ export function ComposerGrid({
   const rows = groupIntoRows(bars);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" ref={gridRef}>
       {rows.map((row, rowIdx) => {
         const rowBars = row.bars.map((bar, i) => ({
           bar,
@@ -67,21 +90,22 @@ export function ComposerGrid({
           0,
         );
 
-        // Compute the starting count number for each bar in the row.
-        // Counts reset to 1 at the start of every row.
+        // Compute starting count for each bar; counts reset per row.
         let runningCount = 1;
         const startCounts = rowBars.map(({ bar }) => {
           const start = runningCount;
-          // Number of count groups consumed by this bar.
           runningCount += Math.ceil(bar.beats.length / notesPerCount);
           return start;
         });
 
-        // Top-level grid: each bar contributes `bar.beats.length` columns,
-        // plus an `auto` column for dividers between bars.
+        // Top-level grid: each bar contributes `bar.beats.length` 1fr columns,
+        // plus an `auto` divider column between bars.
         const gridTemplate = rowBars
           .flatMap(({ bar }, bi) => {
-            const cols = Array.from({ length: bar.beats.length }, () => "1fr");
+            const cols = Array.from(
+              { length: bar.beats.length },
+              () => "minmax(0, 1fr)",
+            );
             if (bi < rowBars.length - 1) cols.push("auto");
             return cols;
           })
@@ -90,7 +114,7 @@ export function ComposerGrid({
         return (
           <div
             key={rowIdx}
-            className="bg-card rounded-lg px-3 pt-2 pb-1 sm:px-4 border border-border relative"
+            className="bg-card rounded-lg px-3 pt-2 pb-2 sm:px-4 border border-border relative"
           >
             {!viewMode && (
               <div className="text-[10px] text-muted-foreground mb-1 font-mono flex items-center gap-2 flex-wrap">
@@ -140,10 +164,8 @@ export function ComposerGrid({
                     startCount={startCounts[bi]}
                     notesPerCount={notesPerCount}
                     viewMode={viewMode}
-                    isFirstInRow={bi === 0}
-                    canDelete={bars.length > 1}
-                    isSelected={
-                      selectedBarIdx === barIdx ||
+                    isHighlighted={
+                      openBarIdx === barIdx ||
                       selectedCell?.barIdx === barIdx
                     }
                     selectedBeatIdx={
@@ -151,24 +173,46 @@ export function ComposerGrid({
                         ? selectedCell.beatIdx
                         : null
                     }
-                    onSelectBar={() =>
-                      onSelectBar(selectedBarIdx === barIdx ? null : barIdx)
-                    }
                     onSelectBeat={(beatIdx) => handleSelect(barIdx, beatIdx)}
-                    onDeleteBar={() => onDeleteBar(barIdx)}
-                    onChangeBarLength={(delta) =>
-                      onChangeBarLength(barIdx, delta)
-                    }
-                    onSetBreak={(breakBefore) =>
-                      onSetBreak(barIdx, breakBefore)
-                    }
-                    onAddBar={(where) => onAddBar(barIdx, bar, where)}
                   />
                   {bi < rowBars.length - 1 && (
                     <div className="w-px bg-bar-divider mx-0.5 self-stretch" />
                   )}
                 </Fragment>
               ))}
+
+              {/* Bar control strips — second grid row, aligned under each bar.
+                  Adjacent strips share remaining space; an open strip claims
+                  intrinsic width via the toolbar's natural size. */}
+              {!viewMode &&
+                rowBars.map(({ bar, barIdx }, bi) => (
+                  <Fragment key={`strip-wrap-${barIdx}`}>
+                    <div
+                      style={{ gridColumn: `span ${bar.beats.length}` }}
+                      className="min-w-0"
+                    >
+                      <BarControlStrip
+                        isOpen={openBarIdx === barIdx}
+                        isFirstInRow={bi === 0}
+                        isFirstBarOverall={barIdx === 0}
+                        canDelete={bars.length > 1}
+                        canShorten={bar.beats.length > 1}
+                        onToggle={() =>
+                          setOpenBarIdx(openBarIdx === barIdx ? null : barIdx)
+                        }
+                        onAddBefore={() => onAddBar(barIdx, bar, "before")}
+                        onAddAfter={() => onAddBar(barIdx, bar, "after")}
+                        onShorten={() => onChangeBarLength(barIdx, -1)}
+                        onLengthen={() => onChangeBarLength(barIdx, +1)}
+                        onSetBreak={() => onSetBreak(barIdx, true)}
+                        onDelete={() => onDeleteBar(barIdx)}
+                      />
+                    </div>
+                    {bi < rowBars.length - 1 && (
+                      <div aria-hidden className="w-px mx-0.5" />
+                    )}
+                  </Fragment>
+                ))}
             </div>
 
             <span className="hidden">{totalBeats}</span>
