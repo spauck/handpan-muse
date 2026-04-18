@@ -538,9 +538,7 @@ const Index = () => {
             notesPerCount={state.notesPerCount}
             viewMode={viewMode}
             selectedCell={selectedCell}
-            selectedBarIdx={selectedBarIdx}
             onSelectCell={handleSelectCell}
-            onSelectBar={setSelectedBarIdx}
             onDeleteBar={deleteBar}
             onChangeBarLength={changeBarLength}
             onSetBreak={setBreak}
