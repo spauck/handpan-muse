@@ -81,12 +81,10 @@ const Index = () => {
   );
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
-  const [selectedBarIdx, setSelectedBarIdx] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState(false);
 
   const handleSelectCell = useCallback((cell: SelectedCell | null) => {
     setSelectedCell(cell);
-    if (cell) setSelectedBarIdx(cell.barIdx);
   }, []);
 
   const [loadedName, setLoadedName] = useState<string | null>(() => {
@@ -192,7 +190,6 @@ const Index = () => {
       );
       updateState({ ...state, bars: swapped });
       setSelectedCell(null);
-      setSelectedBarIdx(null);
     },
     [state, updateState],
   );
