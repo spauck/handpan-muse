@@ -605,6 +605,7 @@ const Index = () => {
             onAddBar={addBar}
             onMoveRow={moveRow}
             onDuplicateRow={duplicateRow}
+            onDeleteRow={deleteRow}
           />
         </div>
       </div>
