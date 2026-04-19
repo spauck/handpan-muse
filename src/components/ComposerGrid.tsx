@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
 
-import { ChevronDown, ChevronUp, Copy } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Trash2 } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import type { Bar } from "@/lib/composer-state";
 import { groupIntoRows } from "@/lib/composer-state";
