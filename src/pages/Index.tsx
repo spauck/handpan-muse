@@ -195,7 +195,32 @@ const Index = () => {
     [state, updateState],
   );
 
-  const activeNotes = useMemo<Array<{ value: string; hand: Hand }>>(() => {
+  const duplicateRow = useCallback(
+    (rowIdx: number) => {
+      const rowStarts: number[] = [];
+      state.bars.forEach((bar, i) => {
+        if (i === 0 || bar.breakBefore) rowStarts.push(i);
+      });
+      const start = rowStarts[rowIdx];
+      const end =
+        rowIdx + 1 < rowStarts.length
+          ? rowStarts[rowIdx + 1]
+          : state.bars.length;
+      const rowBars = state.bars.slice(start, end);
+      // Deep clone beats so the duplicate is independent.
+      const cloned: Bar[] = rowBars.map((bar, i) => ({
+        breakBefore: i === 0 ? true : bar.breakBefore,
+        beats: bar.beats.map((beat) => beat.map((n) => ({ ...n }))),
+      }));
+      const newBars = [
+        ...state.bars.slice(0, end),
+        ...cloned,
+        ...state.bars.slice(end),
+      ];
+      updateState({ ...state, bars: newBars });
+    },
+    [state, updateState],
+  );
     if (!selectedCell) return [];
     return state.bars[selectedCell.barIdx]?.beats[selectedCell.beatIdx] ?? [];
   }, [selectedCell, state]);
