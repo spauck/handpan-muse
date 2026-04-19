@@ -528,6 +528,7 @@ const Index = () => {
                 )}
                 {viewMode ? "Edit" : "View"}
               </button>
+              <InfoDialog />
               {!viewMode && <SettingsPanel />}
             </div>
           </div>
@@ -569,6 +570,7 @@ const Index = () => {
             onSetBreak={setBreak}
             onAddBar={addBar}
             onMoveRow={moveRow}
+            onDuplicateRow={duplicateRow}
           />
         </div>
       </div>
