@@ -1,13 +1,5 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
 
-import {
-  CircleMinus,
-  CirclePlus,
-  CornerDownLeft,
-  PanelLeftOpen,
-  PanelRightOpen,
-  Trash2,
-} from "lucide-react";
 import type { Bar } from "@/lib/composer-state";
 import { BeatCell } from "./BeatCell";
 
@@ -18,16 +10,10 @@ interface BarColumnProps {
   startCount: number;
   notesPerCount: number;
   viewMode?: boolean;
-  isFirstInRow: boolean;
-  canDelete: boolean;
   isSelected: boolean;
   selectedBeatIdx: number | null;
   onSelectBar: () => void;
   onSelectBeat: (beatIdx: number) => void;
-  onDeleteBar: () => void;
-  onChangeBarLength: (delta: number) => void;
-  onSetBreak: (breakBefore: boolean) => void;
-  onAddBar: (where: "before" | "after") => void;
 }
 
 function getCountLabels(beatNumber: number, notesPerCount: number): string[] {
@@ -52,16 +38,10 @@ export function BarColumn({
   startCount,
   notesPerCount,
   viewMode,
-  isFirstInRow,
-  canDelete,
   isSelected,
   selectedBeatIdx,
   onSelectBar,
   onSelectBeat,
-  onDeleteBar,
-  onChangeBarLength,
-  onSetBreak,
-  onAddBar,
 }: BarColumnProps) {
   const beatCount = bar.beats.length;
   const gridTemplateColumns = `repeat(${beatCount}, 1fr)`;
@@ -123,70 +103,6 @@ export function BarColumn({
           onSelect={() => onSelectBeat(beatIdx)}
         />
       ))}
-
-      {/* Controls — visible on hover (desktop) or when bar is selected (mobile) */}
-      {!viewMode && (
-        <div
-          className={`flex items-center justify-center gap-0.5 transition-opacity ${
-            isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-          }`}
-          style={{ gridColumn: `span ${beatCount}` }}
-        >
-          <button
-            type="button"
-            onClick={() => onAddBar("before")}
-            className="text-muted-foreground hover:text-foreground p-1"
-            title="Add bar before"
-          >
-            <PanelRightOpen size={13} />
-          </button>
-          {barIdx > 0 && !isFirstInRow && (
-            <button
-              type="button"
-              onClick={() => onSetBreak(true)}
-              className="text-muted-foreground hover:text-foreground p-1"
-              title="Insert row break before this bar"
-            >
-              <CornerDownLeft size={13} />
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => onChangeBarLength(-1)}
-            className="text-muted-foreground hover:text-foreground p-1"
-            title="Shorten bar"
-            disabled={beatCount <= 1}
-          >
-            <CircleMinus size={13} />
-          </button>
-          <button
-            type="button"
-            onClick={() => onChangeBarLength(+1)}
-            className="text-muted-foreground hover:text-foreground p-1"
-            title="Lengthen bar"
-          >
-            <CirclePlus size={13} />
-          </button>
-          {canDelete && (
-            <button
-              type="button"
-              onClick={onDeleteBar}
-              className="text-muted-foreground hover:text-destructive p-1"
-              title="Delete bar"
-            >
-              <Trash2 size={13} />
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => onAddBar("after")}
-            className="text-muted-foreground hover:text-foreground p-1"
-            title="Add bar after"
-          >
-            <PanelLeftOpen size={13} />
-          </button>
-        </div>
-      )}
     </div>
   );
 }
