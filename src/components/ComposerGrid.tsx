@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
 
-import { ChevronDown, ChevronUp, Copy } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Trash2 } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import type { Bar } from "@/lib/composer-state";
 import { groupIntoRows } from "@/lib/composer-state";
@@ -28,6 +28,7 @@ interface ComposerGridProps {
   ) => void;
   onMoveRow: (rowIdx: number, direction: -1 | 1) => void;
   onDuplicateRow: (rowIdx: number) => void;
+  onDeleteRow: (rowIdx: number) => void;
 }
 
 export function ComposerGrid({
@@ -42,6 +43,7 @@ export function ComposerGrid({
   onAddBar,
   onMoveRow,
   onDuplicateRow,
+  onDeleteRow,
 }: ComposerGridProps) {
   // Only one bar's controls can be open at a time across the whole grid.
   const [openBarIdx, setOpenBarIdx] = useState<number | null>(null);
@@ -159,6 +161,16 @@ export function ComposerGrid({
                 >
                   <Copy size={11} /> duplicate
                 </button>
+                {bars.length > row.bars.length && (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteRow(rowIdx)}
+                    className="text-muted-foreground hover:text-destructive inline-flex items-center gap-0.5"
+                    title="Delete row"
+                  >
+                    <Trash2 size={11} /> delete
+                  </button>
+                )}
               </div>
             )}
 
