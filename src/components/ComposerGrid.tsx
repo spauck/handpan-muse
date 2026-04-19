@@ -43,6 +43,7 @@ export function ComposerGrid({
   onAddBar,
   onMoveRow,
   onDuplicateRow,
+  onDeleteRow,
 }: ComposerGridProps) {
   // Only one bar's controls can be open at a time across the whole grid.
   const [openBarIdx, setOpenBarIdx] = useState<number | null>(null);
