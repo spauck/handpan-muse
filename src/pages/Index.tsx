@@ -222,6 +222,40 @@ const Index = () => {
     [state, updateState],
   );
 
+  const deleteRow = useCallback(
+    (rowIdx: number) => {
+      const rowStarts: number[] = [];
+      state.bars.forEach((bar, i) => {
+        if (i === 0 || bar.breakBefore) rowStarts.push(i);
+      });
+      const start = rowStarts[rowIdx];
+      const end =
+        rowIdx + 1 < rowStarts.length
+          ? rowStarts[rowIdx + 1]
+          : state.bars.length;
+      // Don't allow deleting the only row.
+      if (end - start >= state.bars.length) return;
+      const newBars = state.bars
+        .slice(0, start)
+        .concat(state.bars.slice(end))
+        .map((bar, i): Bar =>
+          i === 0 ? { ...bar, breakBefore: true } : bar,
+        );
+      updateState({ ...state, bars: newBars });
+      if (selectedCell) {
+        if (selectedCell.barIdx >= start && selectedCell.barIdx < end) {
+          setSelectedCell(null);
+        } else if (selectedCell.barIdx >= end) {
+          setSelectedCell({
+            ...selectedCell,
+            barIdx: selectedCell.barIdx - (end - start),
+          });
+        }
+      }
+    },
+    [state, updateState, selectedCell],
+  );
+
   const activeNotes = useMemo<Array<{ value: string; hand: Hand }>>(() => {
     if (!selectedCell) return [];
     return state.bars[selectedCell.barIdx]?.beats[selectedCell.beatIdx] ?? [];
