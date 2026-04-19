@@ -16,6 +16,7 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ComposerGrid } from "@/components/ComposerGrid";
 import { CompositionManager } from "@/components/CompositionManager";
+import { InfoDialog } from "@/components/InfoDialog";
 import { PositionKeyboard } from "@/components/PositionKeyboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import {
@@ -190,6 +191,33 @@ const Index = () => {
       );
       updateState({ ...state, bars: swapped });
       setSelectedCell(null);
+    },
+    [state, updateState],
+  );
+
+  const duplicateRow = useCallback(
+    (rowIdx: number) => {
+      const rowStarts: number[] = [];
+      state.bars.forEach((bar, i) => {
+        if (i === 0 || bar.breakBefore) rowStarts.push(i);
+      });
+      const start = rowStarts[rowIdx];
+      const end =
+        rowIdx + 1 < rowStarts.length
+          ? rowStarts[rowIdx + 1]
+          : state.bars.length;
+      const rowBars = state.bars.slice(start, end);
+      // Deep clone beats so the duplicate is independent.
+      const cloned: Bar[] = rowBars.map((bar, i) => ({
+        breakBefore: i === 0 ? true : bar.breakBefore,
+        beats: bar.beats.map((beat) => beat.map((n) => ({ ...n }))),
+      }));
+      const newBars = [
+        ...state.bars.slice(0, end),
+        ...cloned,
+        ...state.bars.slice(end),
+      ];
+      updateState({ ...state, bars: newBars });
     },
     [state, updateState],
   );
@@ -500,6 +528,7 @@ const Index = () => {
                 )}
                 {viewMode ? "Edit" : "View"}
               </button>
+              <InfoDialog />
               {!viewMode && <SettingsPanel />}
             </div>
           </div>
@@ -541,6 +570,7 @@ const Index = () => {
             onSetBreak={setBreak}
             onAddBar={addBar}
             onMoveRow={moveRow}
+            onDuplicateRow={duplicateRow}
           />
         </div>
       </div>

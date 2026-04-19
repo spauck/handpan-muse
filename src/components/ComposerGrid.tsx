@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
 
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import type { Bar } from "@/lib/composer-state";
 import { groupIntoRows } from "@/lib/composer-state";
@@ -27,6 +27,7 @@ interface ComposerGridProps {
     where: "before" | "after",
   ) => void;
   onMoveRow: (rowIdx: number, direction: -1 | 1) => void;
+  onDuplicateRow: (rowIdx: number) => void;
 }
 
 export function ComposerGrid({
@@ -40,6 +41,7 @@ export function ComposerGrid({
   onSetBreak,
   onAddBar,
   onMoveRow,
+  onDuplicateRow,
 }: ComposerGridProps) {
   // Only one bar's controls can be open at a time across the whole grid.
   const [openBarIdx, setOpenBarIdx] = useState<number | null>(null);
@@ -149,6 +151,14 @@ export function ComposerGrid({
                     <ChevronUp size={12} /> join up
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={() => onDuplicateRow(rowIdx)}
+                  className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
+                  title="Duplicate row below"
+                >
+                  <Copy size={11} /> duplicate
+                </button>
               </div>
             )}
 
