@@ -161,6 +161,16 @@ export function ComposerGrid({
                 >
                   <Copy size={11} /> duplicate
                 </button>
+                {bars.length > row.bars.length && (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteRow(rowIdx)}
+                    className="text-muted-foreground hover:text-destructive inline-flex items-center gap-0.5"
+                    title="Delete row"
+                  >
+                    <Trash2 size={11} /> delete
+                  </button>
+                )}
               </div>
             )}
 
