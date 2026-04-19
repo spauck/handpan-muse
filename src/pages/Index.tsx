@@ -221,6 +221,8 @@ const Index = () => {
     },
     [state, updateState],
   );
+
+  const activeNotes = useMemo<Array<{ value: string; hand: Hand }>>(() => {
     if (!selectedCell) return [];
     return state.bars[selectedCell.barIdx]?.beats[selectedCell.beatIdx] ?? [];
   }, [selectedCell, state]);
