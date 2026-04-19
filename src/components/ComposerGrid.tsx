@@ -28,6 +28,7 @@ interface ComposerGridProps {
   ) => void;
   onMoveRow: (rowIdx: number, direction: -1 | 1) => void;
   onDuplicateRow: (rowIdx: number) => void;
+  onDeleteRow: (rowIdx: number) => void;
 }
 
 export function ComposerGrid({
