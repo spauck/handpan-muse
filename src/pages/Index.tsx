@@ -16,6 +16,7 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ComposerGrid } from "@/components/ComposerGrid";
 import { CompositionManager } from "@/components/CompositionManager";
+import { InfoDialog } from "@/components/InfoDialog";
 import { PositionKeyboard } from "@/components/PositionKeyboard";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import {
