@@ -72,7 +72,7 @@ export function RadialGlyph({
             x2={x2}
             y2={y2}
             stroke={color || "currentColor"}
-            strokeWidth={7}
+            strokeWidth={10}
             strokeLinecap="round"
           />
         );

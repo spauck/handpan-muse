@@ -57,7 +57,7 @@ export function BarControlStrip({
   const iconSize = 16;
   return (
     <div
-      className="mt-2 -mb-10 flex flex-row items-center justify-center gap-0.5 rounded-sm bg-accent ring-2 ring-accent px-1 py-0.5"
+      className="mt-2 -mb-3 flex flex-row items-center justify-center gap-0.5 rounded-sm bg-accent ring-2 ring-accent px-1 py-0.5"
       role="toolbar"
       aria-label="Bar controls"
     >
