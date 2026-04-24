@@ -79,6 +79,16 @@ export function ComposerGrid({
 
   const rows = groupIntoRows(bars);
 
+  // Uniform scale across rows: every row uses the same column template,
+  // sized to the row with the most beats. Shorter rows simply leave the
+  // remaining columns empty.
+  const maxRowBeats = Math.max(
+    ...rows.map((r) => r.bars.reduce((s, b) => s + b.beats.length, 0)),
+    1,
+  );
+
+  const _uniformGridTemplate = `repeat(${maxRowBeats}, minmax(0, 1fr))`;
+
   return (
     <div className="space-y-3" ref={gridRef}>
       {rows.map((row, rowIdx) => {
@@ -90,6 +100,10 @@ export function ComposerGrid({
           (s, { bar }) => s + bar.beats.length,
           0,
         );
+        const _trailingEmpty = maxRowBeats - totalBeats;
+        const _controlsTemplate = row.bars
+          .map((b) => `minmax(0, ${b.beats.length}fr)`)
+          .join(" ");
 
         // Compute starting count for each bar; counts reset per row.
         let runningCount = 1;
@@ -99,18 +113,6 @@ export function ComposerGrid({
           return start;
         });
 
-        // Top-level grid: each bar contributes `bar.beats.length` 1fr columns,
-        // plus an `auto` divider column between bars.
-        const gridTemplate = rowBars
-          .flatMap(({ bar }, bi) => {
-            const cols = Array.from(
-              { length: bar.beats.length },
-              () => "minmax(0, 1fr)",
-            );
-            if (bi < rowBars.length - 1) cols.push("auto");
-            return cols;
-          })
-          .join(" ");
 
         return (
           <div
@@ -173,7 +175,7 @@ export function ComposerGrid({
 
             <div
               className="grid w-full items-end"
-              style={{ gridTemplateColumns: gridTemplate }}
+              style={{ gridTemplateColumns: _uniformGridTemplate }}
             >
               {rowBars.map(({ bar, barIdx }, bi) => (
                 <Fragment key={`bar-wrap-${barIdx}`}>
@@ -192,21 +194,26 @@ export function ComposerGrid({
                         : null
                     }
                     onSelectBeat={(beatIdx) => handleSelect(barIdx, beatIdx)}
+                    showDivider={bi < rowBars.length - 1 || !!_trailingEmpty}
                   />
-                  {bi < rowBars.length - 1 && (
-                    <div className="w-px bg-bar-divider mx-0.5 self-stretch" />
-                  )}
                 </Fragment>
               ))}
 
-              {/* Bar control strips — second grid row, aligned under each bar.
-                  Adjacent strips share remaining space; an open strip claims
-                  intrinsic width via the toolbar's natural size. */}
+              {!!_trailingEmpty && (
+                <div
+                  style={{
+                    gridTemplateColumns: `repeat(${_trailingEmpty}, minmax(0, 1fr))`,
+                    gridColumn: `span ${_trailingEmpty}`,
+                  }}
+                />
+              )}
+            </div>
+
+            <div className="flex flex-row items-start">
               {!viewMode &&
                 rowBars.map(({ bar, barIdx }, bi) => (
                   <Fragment key={`strip-wrap-${barIdx}`}>
                     <div
-                      style={{ gridColumn: `span ${bar.beats.length}` }}
                       className="min-w-0"
                     >
                       <BarControlStrip
@@ -226,14 +233,9 @@ export function ComposerGrid({
                         onDelete={() => onDeleteBar(barIdx)}
                       />
                     </div>
-                    {bi < rowBars.length - 1 && (
-                      <div aria-hidden className="w-px mx-0.5" />
-                    )}
                   </Fragment>
                 ))}
             </div>
-
-            <span className="hidden">{totalBeats}</span>
           </div>
         );
       })}

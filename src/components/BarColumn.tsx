@@ -12,6 +12,7 @@ interface BarColumnProps {
   viewMode?: boolean;
   isHighlighted: boolean;
   selectedBeatIdx: number | null;
+  showDivider?: boolean;
   onSelectBeat: (beatIdx: number) => void;
 }
 
@@ -40,15 +41,20 @@ export function BarColumn({
   isHighlighted,
   selectedBeatIdx,
   onSelectBeat,
+  showDivider,
 }: BarColumnProps) {
   const beatCount = bar.beats.length;
   const gridTemplateColumns = `repeat(${beatCount}, 1fr)`;
 
   return (
     <div
-      className={`grid rounded-md transition-colors ${
-        !viewMode && isHighlighted ? "bg-accent/30 ring-1 ring-primary/40" : ""
-      }`}
+      className={`grid transition-colors 
+        ${showDivider ? "border-r border-bar-divider border-1" : ""}
+        ${
+          !viewMode && isHighlighted
+            ? " rounded-md bg-accent/30 ring-2 ring-accent border-none"
+            : ""
+        }`}
       style={{ gridTemplateColumns, gridColumn: `span ${beatCount}` }}
     >
       {/* Count labels */}
