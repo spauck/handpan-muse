@@ -43,17 +43,21 @@ export function BarControlStrip({
         onClick={onToggle}
         title="Bar controls"
         aria-label="Open bar controls"
-        className="h-2 mt-1 rounded-sm bg-bar-divider/60 hover:bg-primary/50 transition-colors cursor-pointer w-full min-w-0"
-      />
+        // We set 'flex' on this button to remove inherited line height which pads out the height unexpectedly.
+        className="flex transition-colors cursor-pointer w-full min-w-0 px-2 py-0 my-2"
+      >
+        <div className="h-2 bg-accent hover:bg-primary/50 w-full rounded-sm" />
+      </button>
     );
   }
 
   const btn =
     "text-muted-foreground hover:text-foreground p-1 rounded-sm hover:bg-accent/60 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed";
 
+  const iconSize = 16;
   return (
     <div
-      className="mt-1 flex items-center justify-center gap-0.5 rounded-sm bg-accent/40 ring-1 ring-primary/40 px-1 py-0.5 whitespace-nowrap"
+      className="mt-2 -mb-10 flex flex-row items-center justify-center gap-0.5 rounded-sm bg-accent ring-2 ring-accent px-1 py-0.5"
       role="toolbar"
       aria-label="Bar controls"
     >
@@ -63,7 +67,7 @@ export function BarControlStrip({
         className={btn}
         title="Add bar before"
       >
-        <PanelRightOpen size={13} />
+        <PanelRightOpen size={iconSize} />
       </button>
       {!isFirstBarOverall && !isFirstInRow && (
         <button
@@ -72,7 +76,7 @@ export function BarControlStrip({
           className={btn}
           title="Insert row break before this bar"
         >
-          <CornerDownLeft size={13} />
+          <CornerDownLeft size={iconSize} />
         </button>
       )}
       <button
@@ -82,7 +86,7 @@ export function BarControlStrip({
         title="Shorten bar"
         disabled={!canShorten}
       >
-        <CircleMinus size={13} />
+        <CircleMinus size={iconSize} />
       </button>
       <button
         type="button"
@@ -90,7 +94,7 @@ export function BarControlStrip({
         className={btn}
         title="Lengthen bar"
       >
-        <CirclePlus size={13} />
+        <CirclePlus size={iconSize} />
       </button>
       {canDelete && (
         <button
@@ -99,7 +103,7 @@ export function BarControlStrip({
           className={`${btn} hover:text-destructive`}
           title="Delete bar"
         >
-          <Trash2 size={13} />
+          <Trash2 size={iconSize} />
         </button>
       )}
       <button
@@ -108,7 +112,7 @@ export function BarControlStrip({
         className={btn}
         title="Add bar after"
       >
-        <PanelLeftOpen size={13} />
+        <PanelLeftOpen size={iconSize} />
       </button>
     </div>
   );

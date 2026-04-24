@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
 
-import { ChevronDown, ChevronUp, Copy, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Merge, Trash2 } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import type { Bar } from "@/lib/composer-state";
 import { groupIntoRows } from "@/lib/composer-state";
@@ -53,10 +53,7 @@ export function ComposerGrid({
   useEffect(() => {
     if (openBarIdx === null) return;
     const handler = (e: MouseEvent) => {
-      if (
-        gridRef.current &&
-        !gridRef.current.contains(e.target as Node)
-      ) {
+      if (gridRef.current && !gridRef.current.contains(e.target as Node)) {
         setOpenBarIdx(null);
       }
     };
@@ -82,6 +79,16 @@ export function ComposerGrid({
 
   const rows = groupIntoRows(bars);
 
+  // Uniform scale across rows: every row uses the same column template,
+  // sized to the row with the most beats. Shorter rows simply leave the
+  // remaining columns empty.
+  const maxRowBeats = Math.max(
+    ...rows.map((r) => r.bars.reduce((s, b) => s + b.beats.length, 0)),
+    1,
+  );
+
+  const _uniformGridTemplate = `repeat(${maxRowBeats}, minmax(0, 1fr))`;
+
   return (
     <div className="space-y-3" ref={gridRef}>
       {rows.map((row, rowIdx) => {
@@ -93,6 +100,10 @@ export function ComposerGrid({
           (s, { bar }) => s + bar.beats.length,
           0,
         );
+        const _trailingEmpty = maxRowBeats - totalBeats;
+        const _controlsTemplate = row.bars
+          .map((b) => `minmax(0, ${b.beats.length}fr)`)
+          .join(" ");
 
         // Compute starting count for each bar; counts reset per row.
         let runningCount = 1;
@@ -102,26 +113,15 @@ export function ComposerGrid({
           return start;
         });
 
-        // Top-level grid: each bar contributes `bar.beats.length` 1fr columns,
-        // plus an `auto` divider column between bars.
-        const gridTemplate = rowBars
-          .flatMap(({ bar }, bi) => {
-            const cols = Array.from(
-              { length: bar.beats.length },
-              () => "minmax(0, 1fr)",
-            );
-            if (bi < rowBars.length - 1) cols.push("auto");
-            return cols;
-          })
-          .join(" ");
+        const iconSize = 12;
 
         return (
           <div
             key={rowIdx}
-            className="bg-card rounded-lg px-3 pt-2 pb-2 sm:px-4 border border-border relative"
+            className="bg-card rounded-lg px-1 pt-1 pb-1 sm:px-2 border border-border relative"
           >
             {!viewMode && (
-              <div className="text-[10px] text-muted-foreground mb-1 font-mono flex items-center gap-2 flex-wrap">
+              <div className="text-[10px] text-muted-foreground mb-1 sm:mb-2 font-mono flex items-center gap-2 flex-wrap">
                 <span>Row {rowIdx + 1}</span>
                 {rowIdx > 0 && (
                   <button
@@ -130,7 +130,7 @@ export function ComposerGrid({
                     className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
                     title="Move row up"
                   >
-                    <ChevronUp size={12} /> up
+                    <ChevronUp size={iconSize} />
                   </button>
                 )}
                 {rowIdx < rows.length - 1 && (
@@ -140,7 +140,7 @@ export function ComposerGrid({
                     className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
                     title="Move row down"
                   >
-                    <ChevronDown size={12} /> down
+                    <ChevronDown size={iconSize} />
                   </button>
                 )}
                 {rowIdx > 0 && (
@@ -150,7 +150,7 @@ export function ComposerGrid({
                     className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
                     title="Join with previous row"
                   >
-                    <ChevronUp size={12} /> join up
+                    <Merge size={iconSize} />
                   </button>
                 )}
                 <button
@@ -159,7 +159,7 @@ export function ComposerGrid({
                   className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
                   title="Duplicate row below"
                 >
-                  <Copy size={11} /> duplicate
+                  <Copy size={iconSize} />
                 </button>
                 {bars.length > row.bars.length && (
                   <button
@@ -168,7 +168,7 @@ export function ComposerGrid({
                     className="text-muted-foreground hover:text-destructive inline-flex items-center gap-0.5"
                     title="Delete row"
                   >
-                    <Trash2 size={11} /> delete
+                    <Trash2 size={iconSize} />
                   </button>
                 )}
               </div>
@@ -176,7 +176,7 @@ export function ComposerGrid({
 
             <div
               className="grid w-full items-end"
-              style={{ gridTemplateColumns: gridTemplate }}
+              style={{ gridTemplateColumns: _uniformGridTemplate }}
             >
               {rowBars.map(({ bar, barIdx }, bi) => (
                 <Fragment key={`bar-wrap-${barIdx}`}>
@@ -187,8 +187,7 @@ export function ComposerGrid({
                     notesPerCount={notesPerCount}
                     viewMode={viewMode}
                     isHighlighted={
-                      openBarIdx === barIdx ||
-                      selectedCell?.barIdx === barIdx
+                      openBarIdx === barIdx || selectedCell?.barIdx === barIdx
                     }
                     selectedBeatIdx={
                       selectedCell?.barIdx === barIdx
@@ -196,29 +195,44 @@ export function ComposerGrid({
                         : null
                     }
                     onSelectBeat={(beatIdx) => handleSelect(barIdx, beatIdx)}
+                    showDivider={bi < rowBars.length - 1 || !!_trailingEmpty}
                   />
-                  {bi < rowBars.length - 1 && (
-                    <div className="w-px bg-bar-divider mx-0.5 self-stretch" />
-                  )}
                 </Fragment>
               ))}
 
-              {/* Bar control strips — second grid row, aligned under each bar.
-                  Adjacent strips share remaining space; an open strip claims
-                  intrinsic width via the toolbar's natural size. */}
+              {!!_trailingEmpty && (
+                <div
+                  style={{
+                    gridTemplateColumns: `repeat(${_trailingEmpty}, minmax(0, 1fr))`,
+                    gridColumn: `span ${_trailingEmpty}`,
+                  }}
+                />
+              )}
+            </div>
+
+            <div className="flex flex-row items-start">
               {!viewMode &&
                 rowBars.map(({ bar, barIdx }, bi) => (
                   <Fragment key={`strip-wrap-${barIdx}`}>
                     <div
-                      style={{ gridColumn: `span ${bar.beats.length}` }}
-                      className="min-w-0"
+                      style={{
+                        width:
+                          openBarIdx === barIdx
+                            ? undefined
+                            : `${(bar.beats.length / maxRowBeats) * 100}%`,
+                        minWidth:
+                          openBarIdx === barIdx
+                            ? `${(bar.beats.length / maxRowBeats) * 100}%`
+                            : undefined,
+                      }}
+                      className={openBarIdx === barIdx ? "shrink-0" : undefined}
                     >
                       <BarControlStrip
                         isOpen={openBarIdx === barIdx}
                         isFirstInRow={bi === 0}
                         isFirstBarOverall={barIdx === 0}
                         canDelete={bars.length > 1}
-                        canShorten={bar.beats.length > 1}
+                        canShorten={bar.beats.length > 2}
                         onToggle={() =>
                           setOpenBarIdx(openBarIdx === barIdx ? null : barIdx)
                         }
@@ -230,14 +244,9 @@ export function ComposerGrid({
                         onDelete={() => onDeleteBar(barIdx)}
                       />
                     </div>
-                    {bi < rowBars.length - 1 && (
-                      <div aria-hidden className="w-px mx-0.5" />
-                    )}
                   </Fragment>
                 ))}
             </div>
-
-            <span className="hidden">{totalBeats}</span>
           </div>
         );
       })}
