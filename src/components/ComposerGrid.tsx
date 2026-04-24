@@ -53,10 +53,7 @@ export function ComposerGrid({
   useEffect(() => {
     if (openBarIdx === null) return;
     const handler = (e: MouseEvent) => {
-      if (
-        gridRef.current &&
-        !gridRef.current.contains(e.target as Node)
-      ) {
+      if (gridRef.current && !gridRef.current.contains(e.target as Node)) {
         setOpenBarIdx(null);
       }
     };
@@ -187,8 +184,7 @@ export function ComposerGrid({
                     notesPerCount={notesPerCount}
                     viewMode={viewMode}
                     isHighlighted={
-                      openBarIdx === barIdx ||
-                      selectedCell?.barIdx === barIdx
+                      openBarIdx === barIdx || selectedCell?.barIdx === barIdx
                     }
                     selectedBeatIdx={
                       selectedCell?.barIdx === barIdx

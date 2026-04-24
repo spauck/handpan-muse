@@ -28,11 +28,13 @@ export function InfoDialog() {
           </DialogHeader>
           <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 text-sm text-foreground space-y-5 leading-relaxed">
             <section>
-              <h3 className="font-semibold text-base mb-1.5">Getting started</h3>
+              <h3 className="font-semibold text-base mb-1.5">
+                Getting started
+              </h3>
               <p className="text-muted-foreground">
                 Note∞ is a handpan composition tool. A composition is a sequence
-                of <strong>bars</strong>, each containing <strong>beats</strong>.
-                Bars wrap into <strong>rows</strong> for readability.
+                of <strong>bars</strong>, each containing <strong>beats</strong>
+                . Bars wrap into <strong>rows</strong> for readability.
               </p>
             </section>
 
@@ -52,8 +54,8 @@ export function InfoDialog() {
             <section>
               <h3 className="font-semibold text-base mb-1.5">Bar controls</h3>
               <p className="text-muted-foreground mb-1.5">
-                Each bar has a thin accent strip below it. Tap the strip to
-                open controls for that bar:
+                Each bar has a thin accent strip below it. Tap the strip to open
+                controls for that bar:
               </p>
               <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
                 <li>Add a bar before or after</li>

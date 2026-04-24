@@ -238,9 +238,7 @@ const Index = () => {
       const newBars = state.bars
         .slice(0, start)
         .concat(state.bars.slice(end))
-        .map((bar, i): Bar =>
-          i === 0 ? { ...bar, breakBefore: true } : bar,
-        );
+        .map((bar, i): Bar => (i === 0 ? { ...bar, breakBefore: true } : bar));
       updateState({ ...state, bars: newBars });
       if (selectedCell) {
         if (selectedCell.barIdx >= start && selectedCell.barIdx < end) {
