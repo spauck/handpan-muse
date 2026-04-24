@@ -33,6 +33,7 @@ function emptyBeats(n: number): Beat[] {
 }
 
 function encodeBeat(beat: Beat): string {
+  if (!beat || !beat.length) return "";
   return beat.map((note) => handShort[note.hand] + note.value).join(noteSplit);
 }
 
@@ -51,6 +52,13 @@ function encodeBar(bar: Bar): string {
 }
 
 function decodeBar(barStr: string): Bar | null {
+  if (barStr === undefined) {
+    console.log("undefined barStr");
+  }
+  if (barStr === "") {
+    return { beats: [[], []], breakBefore: false };
+  }
+
   const m = barStr.match(/^\d*([!B]?)(.*)$/);
   if (!m) return null;
   // Should be `const breakBefore = m[1] === breakBeforeFlag`, but allow "!" for legacy URLs that used it by mistake.
@@ -58,6 +66,10 @@ function decodeBar(barStr: string): Bar | null {
   const rest = m[2];
   const beatStrs = rest === "" ? [] : rest.split(beatSplit);
   const beats: Beat[] = beatStrs.map(decodeBeat);
+  // Ensure at least 2 beats per bar
+  if (beats[1] === undefined) {
+    beats[1] = [];
+  }
   return { beats, breakBefore };
 }
 

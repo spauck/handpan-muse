@@ -214,7 +214,7 @@ export function ComposerGrid({
                         isFirstInRow={bi === 0}
                         isFirstBarOverall={barIdx === 0}
                         canDelete={bars.length > 1}
-                        canShorten={bar.beats.length > 1}
+                        canShorten={bar.beats.length > 2}
                         onToggle={() =>
                           setOpenBarIdx(openBarIdx === barIdx ? null : barIdx)
                         }
