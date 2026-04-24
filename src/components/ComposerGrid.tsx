@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: because */
 
-import { ChevronDown, ChevronUp, Copy, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Merge, Trash2 } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import type { Bar } from "@/lib/composer-state";
 import { groupIntoRows } from "@/lib/composer-state";
@@ -113,14 +113,15 @@ export function ComposerGrid({
           return start;
         });
 
+        const iconSize = 12;
 
         return (
           <div
             key={rowIdx}
-            className="bg-card rounded-lg px-3 pt-2 pb-2 sm:px-4 border border-border relative"
+            className="bg-card rounded-lg px-1 pt-1 pb-1 sm:px-2 border border-border relative"
           >
             {!viewMode && (
-              <div className="text-[10px] text-muted-foreground mb-1 font-mono flex items-center gap-2 flex-wrap">
+              <div className="text-[10px] text-muted-foreground mb-1 sm:mb-2 font-mono flex items-center gap-2 flex-wrap">
                 <span>Row {rowIdx + 1}</span>
                 {rowIdx > 0 && (
                   <button
@@ -129,7 +130,7 @@ export function ComposerGrid({
                     className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
                     title="Move row up"
                   >
-                    <ChevronUp size={12} /> up
+                    <ChevronUp size={iconSize} />
                   </button>
                 )}
                 {rowIdx < rows.length - 1 && (
@@ -139,7 +140,7 @@ export function ComposerGrid({
                     className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
                     title="Move row down"
                   >
-                    <ChevronDown size={12} /> down
+                    <ChevronDown size={iconSize} />
                   </button>
                 )}
                 {rowIdx > 0 && (
@@ -149,7 +150,7 @@ export function ComposerGrid({
                     className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
                     title="Join with previous row"
                   >
-                    <ChevronUp size={12} /> join up
+                    <Merge size={iconSize} />
                   </button>
                 )}
                 <button
@@ -158,7 +159,7 @@ export function ComposerGrid({
                   className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
                   title="Duplicate row below"
                 >
-                  <Copy size={11} /> duplicate
+                  <Copy size={iconSize} />
                 </button>
                 {bars.length > row.bars.length && (
                   <button
@@ -167,7 +168,7 @@ export function ComposerGrid({
                     className="text-muted-foreground hover:text-destructive inline-flex items-center gap-0.5"
                     title="Delete row"
                   >
-                    <Trash2 size={11} /> delete
+                    <Trash2 size={iconSize} />
                   </button>
                 )}
               </div>
@@ -214,7 +215,17 @@ export function ComposerGrid({
                 rowBars.map(({ bar, barIdx }, bi) => (
                   <Fragment key={`strip-wrap-${barIdx}`}>
                     <div
-                      className="min-w-0"
+                      style={{
+                        width:
+                          openBarIdx === barIdx
+                            ? undefined
+                            : `${(bar.beats.length / maxRowBeats) * 100}%`,
+                        minWidth:
+                          openBarIdx === barIdx
+                            ? `${(bar.beats.length / maxRowBeats) * 100}%`
+                            : undefined,
+                      }}
+                      className={openBarIdx === barIdx ? "shrink-0" : undefined}
                     >
                       <BarControlStrip
                         isOpen={openBarIdx === barIdx}
